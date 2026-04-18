@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Github as GithubIcon, Instagram as InstagramIcon, Linkedin as LinkedinIcon, Twitter as TwitterIcon, GraduationCap } from "lucide-react";
+import { GraduationCap, Globe, Mail, MessageCircle, Share2 } from "lucide-react";
 
 export function Footer() {
   return (
@@ -12,7 +12,7 @@ export function Footer() {
           </div>
           <p className="mt-3 text-sm text-muted-foreground">Learn from India's best instructors. Build a career that matters.</p>
           <div className="mt-4 flex gap-3">
-            {[Twitter, Instagram, Linkedin, Github].map((Icon, i) => (
+            {[Globe, Mail, MessageCircle, Share2].map((Icon, i) => (
               <a key={i} href="#" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted hover:bg-accent transition-colors"><Icon className="h-4 w-4" /></a>
             ))}
           </div>
