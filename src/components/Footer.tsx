@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Github, Instagram, Linkedin, Twitter, GraduationCap } from "lucide-react";
+import { Github as GithubIcon, Instagram as InstagramIcon, Linkedin as LinkedinIcon, Twitter as TwitterIcon, GraduationCap } from "lucide-react";
 
 export function Footer() {
   return (
