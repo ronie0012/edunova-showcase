@@ -37,15 +37,10 @@ function Landing() {
           </div>
 
           {/* Mega title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mt-10 font-display text-[14vw] md:text-[10vw] leading-[0.86] tracking-tighter"
-          >
+          <h1 className="mt-10 font-display text-[14vw] md:text-[10vw] leading-[0.86] tracking-tighter animate-fade-in">
             Learn the<br />
             <span className="italic text-acid">unteachable</span>.
-          </motion.h1>
+          </h1>
 
           <div className="mt-12 grid md:grid-cols-12 gap-8 md:gap-10 items-end">
             <motion.div
