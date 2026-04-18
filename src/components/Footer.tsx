@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Twitter, Linkedin, Youtube, Instagram, ArrowUpRight } from "lucide-react";
+import { Globe, Mail, MessageCircle, Share2, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -22,7 +22,7 @@ export function Footer() {
             India's career-first learning platform — built by people who've shipped, for people who want to.
           </p>
           <div className="mt-6 flex gap-2">
-            {[Twitter, Linkedin, Instagram, Youtube].map((Icon, i) => (
+            {[Globe, Mail, MessageCircle, Share2].map((Icon, i) => (
               <a key={i} href="#" className="flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-accent hover:border-acid/50 transition"><Icon className="h-4 w-4" /></a>
             ))}
           </div>
