@@ -1,11 +1,13 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { CourseCard } from "@/components/CourseCard";
 import { courses, courseCurriculum, courseReviews, instructorBios, inr } from "@/lib/data";
-import { Star, Users, Clock, Award, CheckCircle2, PlayCircle, ArrowUpRight, Share2, Heart, ChevronDown } from "lucide-react";
+import { Star, Users, Clock, Award, CheckCircle2, PlayCircle, ArrowUpRight, Share2, Heart, ChevronDown, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { useEnrollments } from "@/lib/enrollments";
 
 export const Route = createFileRoute("/courses/$courseId")({
   head: ({ params }) => {
@@ -51,11 +53,27 @@ function CourseDetail() {
 
   const [open, setOpen] = useState<number | null>(0);
   const [saved, setSaved] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isEnrolled } = useEnrollments(user?.email);
+  const enrolled = isEnrolled(course.id);
 
   const related = courses.filter((c) => c.id !== course.id && c.category === course.category).slice(0, 3);
   const fallbackRelated = related.length ? related : courses.filter((c) => c.id !== course.id).slice(0, 3);
 
-  const enroll = () => toast.success(`Enrolled in ${course.title}`, { description: "Check your email — your first lesson is unlocked." });
+  const buyNow = () => {
+    if (enrolled) {
+      toast.success("You're already enrolled");
+      navigate({ to: "/student" });
+      return;
+    }
+    if (!user) {
+      toast.message("Sign in to continue to checkout");
+      navigate({ to: "/login", search: { redirect: `/checkout/${course.id}` } as never });
+      return;
+    }
+    navigate({ to: "/checkout/$courseId", params: { courseId: String(course.id) } });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,7 +124,7 @@ function CourseDetail() {
             <div className="lg:col-span-5">
               <div className={`relative aspect-video rounded-xl bg-gradient-to-br ${course.color} overflow-hidden shadow-elegant flex items-center justify-center`}>
                 <div className="absolute inset-0 ring-grid opacity-30 mix-blend-overlay" />
-                <button onClick={enroll} className="relative z-10 group flex flex-col items-center gap-3 text-white">
+                <button onClick={() => toast.message("Preview will start shortly…")} className="relative z-10 group flex flex-col items-center gap-3 text-white">
                   <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center group-hover:scale-110 transition">
                     <PlayCircle className="h-8 w-8 fill-white" />
                   </div>
@@ -277,17 +295,19 @@ function CourseDetail() {
                   <div className="mt-1 text-xs font-mono uppercase tracking-wider text-acid">37% off · Closes Apr 28</div>
 
                   <button
-                    onClick={enroll}
+                    onClick={buyNow}
                     className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-md bg-acid text-acid-foreground px-5 py-3.5 text-sm font-semibold hover:opacity-90 transition"
                   >
-                    Enroll now <ArrowUpRight className="h-4 w-4" />
+                    {enrolled ? <>Go to course <ArrowUpRight className="h-4 w-4" /></> : <>Buy now · {inr(course.price)} <ArrowUpRight className="h-4 w-4" /></>}
                   </button>
-                  <button
-                    onClick={() => toast.success("Added to cart")}
-                    className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card hover:border-acid/40 px-5 py-3 text-sm font-semibold transition"
-                  >
-                    Add to cart
-                  </button>
+                  {!enrolled && (
+                    <button
+                      onClick={buyNow}
+                      className="mt-2 w-full inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card hover:border-acid/40 px-5 py-3 text-sm font-semibold transition"
+                    >
+                      <ShoppingCart className="h-4 w-4" /> Add to cart & checkout
+                    </button>
+                  )}
 
                   <div className="mt-6 space-y-3 text-sm">
                     {[
