@@ -93,7 +93,7 @@ function InstructorDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} />
                 <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => inr(v)} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
+                <Tooltip formatter={(v) => inr(Number(v))} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
                 <Bar dataKey="value" fill="var(--color-primary)" radius={[8, 8, 0, 0]} animationDuration={900} />
               </BarChart>
             </ResponsiveContainer>
