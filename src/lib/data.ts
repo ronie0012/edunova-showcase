@@ -19,6 +19,34 @@ export const categories = [
   { name: "Personal Development", count: 19, icon: "❋" },
 ];
 
+export const courseCurriculum = [
+  { module: "Foundations", lessons: ["Welcome & setup", "How this course works", "Tooling & environment", "Your first project"], hours: 6 },
+  { module: "Core concepts", lessons: ["Mental models", "Patterns that scale", "Anti-patterns to avoid", "Lab: build a mini-app"], hours: 14 },
+  { module: "Building real things", lessons: ["Architecture deep-dive", "API design", "State management", "Performance tuning", "Lab: ship to production"], hours: 22 },
+  { module: "Going professional", lessons: ["Code reviews", "Testing strategy", "Debugging like a senior", "Working with PMs & designers"], hours: 18 },
+  { module: "Capstone", lessons: ["Pitch your idea", "Build in public", "Launch & measure", "Hiring partner demo day"], hours: 26 },
+];
+
+export const courseReviews = [
+  { name: "Tanvi Joshi", role: "SDE-2 · Flipkart", rating: 5, date: "2 weeks ago", text: "The capstone alone is worth 10x the price. I shipped a real product and got interview calls within a month." },
+  { name: "Mohit Aggarwal", role: "Founder · Stealth", rating: 5, date: "1 month ago", text: "Aarav's feedback on my code reviews changed how I think about software. Cohort was tight-knit and serious." },
+  { name: "Riya Banerjee", role: "Engineer · CRED", rating: 4, date: "1 month ago", text: "Dense, fast-paced, and unforgiving in the best way. Don't take this if you can't commit 10 hrs/week." },
+  { name: "Devansh Khanna", role: "Freelancer", rating: 5, date: "2 months ago", text: "Replaced a ₹2L bootcamp I dropped out of. EduNova actually teaches you to ship." },
+];
+
+export const instructorBios: Record<string, { tagline: string; bio: string; stats: { label: string; value: string }[] }> = {
+  "Aarav Mehta": {
+    tagline: "ex-Razorpay · Built payments at scale",
+    bio: "Aarav led the checkout team at Razorpay for 4 years before going indie. He's shipped products used by 10M+ Indians and now teaches the craft of building software that actually ships.",
+    stats: [{ label: "Students", value: "12.4k" }, { label: "Avg rating", value: "4.9" }, { label: "Years building", value: "11" }],
+  },
+  "Priya Sharma": { tagline: "Design lead · ex-Zomato", bio: "Priya designed the Zomato ordering flow used by millions daily. She blends rigorous craft with a deep understanding of Indian users.", stats: [{ label: "Students", value: "8.1k" }, { label: "Avg rating", value: "4.8" }, { label: "Shipped products", value: "23" }] },
+  "Rohan Kapoor": { tagline: "Growth @ ex-Dream11", bio: "Rohan ran growth at Dream11 during the IPL boom. He's spent ₹40Cr+ on paid acquisition and learned what actually moves the needle.", stats: [{ label: "Students", value: "9.5k" }, { label: "Avg rating", value: "4.7" }, { label: "Ad spend", value: "₹40Cr" }] },
+  "Dr. Neha Iyer": { tagline: "PhD · ex-Microsoft Research", bio: "Neha published 14 ML papers before joining MSR India. She translates research-grade rigor into practical projects students actually finish.", stats: [{ label: "Students", value: "15.6k" }, { label: "Avg rating", value: "4.9" }, { label: "Papers", value: "14" }] },
+  "Vikram Singh": { tagline: "VC · Partner @ Lightspeed", bio: "Vikram has led 30+ early-stage cheques across Indian SaaS and consumer. He teaches founders the unfiltered version of fundraising.", stats: [{ label: "Students", value: "5.4k" }, { label: "Avg rating", value: "4.6" }, { label: "Investments", value: "30+" }] },
+  "Ananya Rao": { tagline: "TEDx speaker · Communication coach", bio: "Ananya has trained execs at Infosys, Swiggy, and Airtel. Her method works because it's drilled, not theoretical.", stats: [{ label: "Students", value: "7.2k" }, { label: "Avg rating", value: "4.8" }, { label: "Talks given", value: "120+" }] },
+};
+
 export const testimonials = [
   { name: "Ishita Verma", role: "Frontend Engineer · Razorpay", text: "EduNova completely changed my career. The Web Dev Bootcamp landed me a job within 3 months.", rating: 5 },
   { name: "Karthik Reddy", role: "Product Designer · Zomato", text: "Best UI/UX content I've seen in India. Real-world projects, real mentorship.", rating: 5 },

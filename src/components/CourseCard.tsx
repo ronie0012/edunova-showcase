@@ -1,8 +1,10 @@
 import { Star, Users, ArrowUpRight, Clock } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { inr } from "@/lib/data";
 import { toast } from "sonner";
 
 type Props = {
+  id: number;
   title: string;
   instructor: string;
   rating: number;
@@ -14,11 +16,10 @@ type Props = {
   hours?: number;
 };
 
-export function CourseCard({ title, instructor, rating, students, price, color, category, level, hours }: Props) {
+export function CourseCard({ id, title, instructor, rating, students, price, color, category, level, hours }: Props) {
   return (
     <div className="group relative rounded-xl bg-card border border-border overflow-hidden hover:border-acid/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-elegant">
-      {/* Thumbnail */}
-      <div className={`relative h-40 bg-gradient-to-br ${color} overflow-hidden`}>
+      <Link to="/courses/$courseId" params={{ courseId: String(id) }} className={`relative block h-40 bg-gradient-to-br ${color} overflow-hidden`}>
         <div className="absolute inset-0 ring-grid opacity-20 mix-blend-overlay" />
         <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-white">
           <span className="h-1.5 w-1.5 rounded-full bg-acid animate-pulse" />{category}
@@ -26,9 +27,11 @@ export function CourseCard({ title, instructor, rating, students, price, color, 
         <div className="absolute bottom-3 right-3 font-display italic text-white/90 text-3xl drop-shadow">
           {rating}
         </div>
-      </div>
+      </Link>
       <div className="p-5">
-        <h3 className="font-display text-xl leading-tight line-clamp-2 group-hover:text-acid transition-colors">{title}</h3>
+        <Link to="/courses/$courseId" params={{ courseId: String(id) }}>
+          <h3 className="font-display text-xl leading-tight line-clamp-2 group-hover:text-acid transition-colors">{title}</h3>
+        </Link>
         <p className="mt-1.5 text-sm text-muted-foreground">by {instructor}</p>
         <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground font-mono">
           <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-acid text-acid" />{rating}</span>
