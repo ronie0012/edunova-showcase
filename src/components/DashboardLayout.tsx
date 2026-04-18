@@ -1,6 +1,8 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { LayoutDashboard, BookOpen, BarChart3, Shield, Megaphone, Wallet, Settings, Bell, Search, Menu } from "lucide-react";
+import { Link, useLocation, useNavigate, Navigate } from "@tanstack/react-router";
+import { LayoutDashboard, BookOpen, BarChart3, Shield, Megaphone, Wallet, Settings, Bell, Search, Menu, LogOut } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
@@ -26,6 +28,19 @@ export function DashboardLayout({ role, title, children }: { role: "student" | "
   const items = navs[role];
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const nav = useNavigate();
+
+  if (!user) {
+    return <Navigate to="/login" search={{ redirect: location.pathname }} />;
+  }
+
+  const initials = user.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+  const handleLogout = () => {
+    logout();
+    toast.success("Signed out");
+    nav({ to: "/" });
+  };
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -84,7 +99,12 @@ export function DashboardLayout({ role, title, children }: { role: "student" | "
               <Search className="h-4 w-4" /> <span className="font-mono text-xs">⌘K · search</span>
             </div>
             <button className="relative p-2 rounded-md hover:bg-accent"><Bell className="h-5 w-5" /><span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-acid" /></button>
-            <div className="h-9 w-9 rounded-md bg-acid text-acid-foreground flex items-center justify-center text-sm font-display">AN</div>
+            <div className="hidden sm:flex flex-col items-end leading-tight">
+              <div className="text-xs font-medium">{user.name}</div>
+              <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{user.email}</div>
+            </div>
+            <div className="h-9 w-9 rounded-md bg-acid text-acid-foreground flex items-center justify-center text-sm font-display">{initials}</div>
+            <button onClick={handleLogout} title="Sign out" className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-destructive transition"><LogOut className="h-4 w-4" /></button>
           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
