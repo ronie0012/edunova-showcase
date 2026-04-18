@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
@@ -14,20 +14,31 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 glass">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <GraduationCap className="h-5 w-5 text-primary-foreground" />
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="relative h-8 w-8 rounded-md bg-foreground text-background flex items-center justify-center font-display text-lg leading-none">
+            E<span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" />
           </div>
-          <span className="text-lg font-bold tracking-tight">EduNova</span>
+          <div className="leading-none">
+            <div className="font-display text-xl tracking-tight">EduNova<span className="text-acid">.</span></div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-muted-foreground">est · 2026</div>
+          </div>
         </Link>
         <nav className="hidden md:flex items-center gap-1">
           {links.map((l) => (
-            <Link key={l.to} to={l.to} className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors" activeProps={{ className: "text-primary" }}>
+            <Link
+              key={l.to}
+              to={l.to}
+              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              activeProps={{ className: "text-foreground" }}
+            >
               {l.label}
             </Link>
           ))}
-          <Link to="/student" className="ml-2 rounded-lg bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-elegant hover:opacity-95">
-            Get Started
+          <Link
+            to="/student"
+            className="ml-3 group inline-flex items-center gap-1 rounded-md bg-acid text-acid-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+          >
+            Get Started <ArrowUpRight className="h-4 w-4 transition-transform group-hover:rotate-45" />
           </Link>
         </nav>
         <button className="md:hidden p-2" onClick={() => setOpen(!open)} aria-label="Menu">
@@ -37,7 +48,7 @@ export function Navbar() {
       {open && (
         <div className="md:hidden border-t border-border px-4 py-3 space-y-1 bg-card">
           {links.map((l) => (
-            <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent">{l.label}</Link>
+            <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">{l.label}</Link>
           ))}
         </div>
       )}
