@@ -1,47 +1,81 @@
 import { Link } from "@tanstack/react-router";
-import { GraduationCap, Globe, Mail, MessageCircle, Share2 } from "lucide-react";
+import { Globe, Mail, MessageCircle, Share2, ArrowUpRight } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
   return (
-    <footer className="border-t border-border bg-card mt-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-14 grid gap-10 md:grid-cols-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-primary"><GraduationCap className="h-5 w-5 text-primary-foreground" /></div>
-            <span className="text-lg font-bold">EduNova</span>
+    <footer className="border-t border-border bg-card mt-24 relative overflow-hidden">
+      {/* Big wordmark */}
+      <div className="px-4 sm:px-6 pt-16">
+        <div className="mx-auto max-w-7xl">
+          <div className="font-display text-[18vw] leading-[0.85] tracking-tighter text-foreground/90 select-none">
+            EduNova<span className="text-acid">.</span>
           </div>
-          <p className="mt-3 text-sm text-muted-foreground">Learn from India's best instructors. Build a career that matters.</p>
-          <div className="mt-4 flex gap-3">
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-12 pb-10 grid gap-10 md:grid-cols-12">
+        <div className="md:col-span-5">
+          <p className="font-display text-2xl leading-snug max-w-md">
+            India's career-first learning platform — built by people who've shipped, for people who want to.
+          </p>
+          <div className="mt-6 flex gap-2">
             {[Globe, Mail, MessageCircle, Share2].map((Icon, i) => (
-              <a key={i} href="#" className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted hover:bg-accent transition-colors"><Icon className="h-4 w-4" /></a>
+              <a key={i} href="#" className="flex h-10 w-10 items-center justify-center rounded-md border border-border hover:bg-accent hover:border-acid/50 transition"><Icon className="h-4 w-4" /></a>
             ))}
           </div>
         </div>
-        <div>
-          <h4 className="text-sm font-semibold">Platform</h4>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/courses" className="hover:text-foreground">Browse Courses</Link></li>
-            <li><Link to="/student" className="hover:text-foreground">Student Dashboard</Link></li>
-            <li><Link to="/instructor" className="hover:text-foreground">Become an Instructor</Link></li>
+
+        <div className="md:col-span-2">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Platform</h4>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            <li><Link to="/courses" className="hover:text-acid transition">Courses</Link></li>
+            <li><Link to="/student" className="hover:text-acid transition">Student</Link></li>
+            <li><Link to="/instructor" className="hover:text-acid transition">Instructor</Link></li>
+            <li><Link to="/admin" className="hover:text-acid transition">Admin</Link></li>
           </ul>
         </div>
-        <div>
-          <h4 className="text-sm font-semibold">Legal</h4>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link></li>
-            <li><Link to="/terms" className="hover:text-foreground">Terms of Service</Link></li>
+        <div className="md:col-span-2">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Legal</h4>
+          <ul className="mt-4 space-y-2.5 text-sm">
+            <li><Link to="/privacy" className="hover:text-acid transition">Privacy</Link></li>
+            <li><Link to="/terms" className="hover:text-acid transition">Terms</Link></li>
           </ul>
         </div>
-        <div>
-          <h4 className="text-sm font-semibold">Newsletter</h4>
-          <p className="mt-3 text-sm text-muted-foreground">Weekly drops on careers, courses & code.</p>
-          <form className="mt-3 flex gap-2" onSubmit={(e) => e.preventDefault()}>
-            <input type="email" placeholder="you@email.com" className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
-            <button className="rounded-lg bg-gradient-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Join</button>
+        <div className="md:col-span-3">
+          <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Get the brief</h4>
+          <p className="mt-4 text-sm text-muted-foreground">One email a week. Tactics, jobs, drops.</p>
+          <form
+            className="mt-3 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!email.includes("@")) return toast.error("Please enter a valid email");
+              toast.success("You're in. Check your inbox.");
+              setEmail("");
+            }}
+          >
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="flex-1 rounded-md border border-input bg-background/40 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-acid"
+            />
+            <button className="group rounded-md bg-foreground text-background px-3 py-2 text-sm font-semibold inline-flex items-center gap-1 hover:bg-acid hover:text-acid-foreground transition">
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
           </form>
         </div>
       </div>
-      <div className="border-t border-border py-5 text-center text-xs text-muted-foreground">© 2026 EduNova Technologies Pvt. Ltd. All rights reserved.</div>
+
+      <div className="border-t border-border py-5 px-4 sm:px-6">
+        <div className="mx-auto max-w-7xl flex flex-wrap justify-between gap-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+          <span>© 2026 EduNova Technologies Pvt. Ltd.</span>
+          <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> All systems operational</span>
+        </div>
+      </div>
     </footer>
   );
 }

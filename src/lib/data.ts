@@ -1,28 +1,28 @@
 export const inr = (n: number) =>
-  "₹" + n.toLocaleString("en-IN");
+  "₹" + Math.round(n).toLocaleString("en-IN");
 
 export const courses = [
-  { id: 1, title: "Full-Stack Web Development Bootcamp", instructor: "Aarav Mehta", rating: 4.9, students: 12480, price: 2499, color: "from-violet-500 to-fuchsia-500", category: "Tech" },
-  { id: 2, title: "Product Design Masterclass", instructor: "Priya Sharma", rating: 4.8, students: 8120, price: 1899, color: "from-pink-500 to-rose-500", category: "Design" },
-  { id: 3, title: "Digital Marketing 360", instructor: "Rohan Kapoor", rating: 4.7, students: 9540, price: 1499, color: "from-amber-500 to-orange-500", category: "Marketing" },
-  { id: 4, title: "Data Science with Python", instructor: "Dr. Neha Iyer", rating: 4.9, students: 15670, price: 2999, color: "from-blue-500 to-cyan-500", category: "Tech" },
-  { id: 5, title: "Startup Finance & Fundraising", instructor: "Vikram Singh", rating: 4.6, students: 5430, price: 1799, color: "from-emerald-500 to-teal-500", category: "Finance" },
-  { id: 6, title: "Public Speaking & Confidence", instructor: "Ananya Rao", rating: 4.8, students: 7210, price: 999, color: "from-purple-500 to-indigo-500", category: "Personal Development" },
+  { id: 1, title: "Full-Stack Web Development Bootcamp", instructor: "Aarav Mehta", rating: 4.9, students: 12480, price: 2499, color: "from-violet-500 to-fuchsia-500", category: "Tech", level: "Beginner → Job-ready", hours: 86 },
+  { id: 2, title: "Product Design Masterclass", instructor: "Priya Sharma", rating: 4.8, students: 8120, price: 1899, color: "from-pink-500 to-rose-500", category: "Design", level: "Intermediate", hours: 42 },
+  { id: 3, title: "Digital Marketing 360", instructor: "Rohan Kapoor", rating: 4.7, students: 9540, price: 1499, color: "from-amber-500 to-orange-500", category: "Marketing", level: "Beginner", hours: 28 },
+  { id: 4, title: "Data Science with Python", instructor: "Dr. Neha Iyer", rating: 4.9, students: 15670, price: 2999, color: "from-cyan-400 to-blue-500", category: "Tech", level: "Intermediate → Advanced", hours: 72 },
+  { id: 5, title: "Startup Finance & Fundraising", instructor: "Vikram Singh", rating: 4.6, students: 5430, price: 1799, color: "from-emerald-400 to-teal-500", category: "Finance", level: "All levels", hours: 18 },
+  { id: 6, title: "Public Speaking & Confidence", instructor: "Ananya Rao", rating: 4.8, students: 7210, price: 999, color: "from-lime-300 to-emerald-400", category: "Personal Development", level: "Beginner", hours: 14 },
 ];
 
 export const categories = [
-  { name: "Tech", count: 64, icon: "💻" },
-  { name: "Business", count: 41, icon: "📈" },
-  { name: "Design", count: 33, icon: "🎨" },
-  { name: "Marketing", count: 28, icon: "📣" },
-  { name: "Finance", count: 22, icon: "💰" },
-  { name: "Personal Development", count: 19, icon: "🌱" },
+  { name: "Tech", count: 64, icon: "◢" },
+  { name: "Business", count: 41, icon: "◆" },
+  { name: "Design", count: 33, icon: "✦" },
+  { name: "Marketing", count: 28, icon: "✺" },
+  { name: "Finance", count: 22, icon: "▲" },
+  { name: "Personal Development", count: 19, icon: "❋" },
 ];
 
 export const testimonials = [
-  { name: "Ishita Verma", role: "Frontend Engineer @ Razorpay", text: "EduNova completely changed my career. The Web Dev Bootcamp landed me a job within 3 months.", rating: 5 },
-  { name: "Karthik Reddy", role: "Product Designer @ Zomato", text: "Best UI/UX content I've seen in India. Real-world projects, real mentorship.", rating: 5 },
-  { name: "Sneha Patil", role: "Founder, Bloomly", text: "The Startup Finance course gave me the confidence to raise our seed round. Worth every rupee.", rating: 5 },
+  { name: "Ishita Verma", role: "Frontend Engineer · Razorpay", text: "EduNova completely changed my career. The Web Dev Bootcamp landed me a job within 3 months.", rating: 5 },
+  { name: "Karthik Reddy", role: "Product Designer · Zomato", text: "Best UI/UX content I've seen in India. Real-world projects, real mentorship.", rating: 5 },
+  { name: "Sneha Patil", role: "Founder · Bloomly", text: "The Startup Finance course gave me the confidence to raise our seed round. Worth every rupee.", rating: 5 },
 ];
 
 // Admin: CRM
