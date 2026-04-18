@@ -9,12 +9,13 @@ export function Navbar() {
   const [menu, setMenu] = useState(false);
   const { user, logout } = useAuth();
   const nav = useNavigate();
+
   const links = [
-    { to: "/courses", label: "Courses" },
-    { to: "/student", label: "Student" },
-    { to: "/instructor", label: "Instructor" },
-    { to: "/admin", label: "Admin" },
-  ] as const;
+    { to: "/courses" as const, label: "Courses" },
+    ...(user ? [{ to: "/student" as const, label: "Student" }] : []),
+    ...(user ? [{ to: "/instructor" as const, label: "Instructor" }] : []),
+    ...(user?.isAdmin ? [{ to: "/admin" as const, label: "Admin" }] : []),
+  ];
 
   const handleLogout = () => {
     logout();
@@ -77,7 +78,7 @@ export function Navbar() {
             </div>
           ) : (
             <>
-              <Link to="/login" className="ml-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition">
+              <Link to="/login" search={{ redirect: "/" }} className="ml-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition">
                 Sign in
               </Link>
               <Link to="/signup" className="group inline-flex items-center gap-1 rounded-md bg-acid text-acid-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition">
@@ -101,7 +102,7 @@ export function Navbar() {
             </button>
           ) : (
             <>
-              <Link to="/login" onClick={() => setOpen(false)} className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
+              <Link to="/login" search={{ redirect: "/" }} onClick={() => setOpen(false)} className="block rounded-md px-3 py-2 text-sm font-medium hover:bg-accent">Sign in</Link>
               <Link to="/signup" onClick={() => setOpen(false)} className="block rounded-md px-3 py-2 text-sm font-semibold bg-acid text-acid-foreground">Get Started</Link>
             </>
           )}

@@ -1,106 +1,400 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Megaphone, MousePointerClick, Target, Wallet } from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { campaigns, funnel, inr } from "@/lib/data";
-import { Heart, MessageCircle, Share2, TrendingUp } from "lucide-react";
 import { LiveNumber } from "@/components/LiveNumber";
+import { useAdminWorkspace } from "@/lib/admin";
+import { inr } from "@/lib/data";
 
 export const Route = createFileRoute("/admin/marketing")({
-  head: () => ({ meta: [{ title: "Marketing Dashboard — EduNova Admin" }, { name: "description", content: "Active campaigns, funnel and ROI across Google Ads, Meta, Email, Referrals, and SEO." }] }),
-  component: Marketing,
+  head: () => ({
+    meta: [
+      { title: "Marketing Dashboard - EduNova Admin" },
+      {
+        name: "description",
+        content:
+          "Campaign planning, funnel performance, and ROI tracking for EduNova.",
+      },
+    ],
+  }),
+  component: MarketingDashboard,
 });
 
-function Marketing() {
-  const totalSpend = campaigns.reduce((a, c) => a + c.spend, 0);
-  const totalConv = campaigns.reduce((a, c) => a + c.conversions, 0);
-  const cac = totalSpend / totalConv;
-  const ltv = 4200;
-  const max = Math.max(...funnel.map((f) => f.value));
+function MarketingDashboard() {
+  const {
+    state,
+    marketingMetrics,
+    createCampaign,
+    toggleCampaign,
+    bumpCampaignConversions,
+  } = useAdminWorkspace();
+  const [form, setForm] = useState({
+    channel: "",
+    spend: "",
+    impressions: "",
+    clicks: "",
+    signups: "",
+    conversions: "",
+  });
+
+  const maxFunnelValue = useMemo(
+    () => Math.max(...marketingMetrics.funnel.map((item) => item.value), 1),
+    [marketingMetrics.funnel]
+  );
 
   return (
-    <DashboardLayout role="admin" title="Marketing Dashboard">
-      <div className="grid md:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Active Campaigns", value: 5 },
-          { label: "Total Spend", value: totalSpend, prefix: "₹" },
-          { label: "Conversions", value: totalConv },
-          { label: "Marketing ROI", value: ((ltv * totalConv - totalSpend) / totalSpend) * 100, suffix: "%", format: (n: number) => n.toFixed(0) },
-        ].map((s, i) => (
-          <div key={i} className="rounded-2xl bg-card border border-border p-5">
-            <div className="text-xs text-muted-foreground">{s.label}</div>
-            <div className="mt-2 text-2xl font-bold"><LiveNumber value={s.value} prefix={s.prefix} suffix={s.suffix} format={s.format} drift={0.002} /></div>
-          </div>
-        ))}
+    <DashboardLayout role="admin" title="Marketing dashboard">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Active campaigns"
+          value={<LiveNumber value={marketingMetrics.activeCampaigns} />}
+          icon={Megaphone}
+        />
+        <StatCard
+          label="Spend"
+          value={<LiveNumber value={marketingMetrics.spend} prefix="Rs " />}
+          icon={Wallet}
+        />
+        <StatCard
+          label="CAC"
+          value={
+            <LiveNumber
+              value={marketingMetrics.cac}
+              prefix="Rs "
+              format={(value) => Math.round(value).toLocaleString("en-IN")}
+            />
+          }
+          icon={Target}
+        />
+        <StatCard
+          label="ROI"
+          value={
+            <LiveNumber
+              value={marketingMetrics.roi}
+              suffix="%"
+              format={(value) => value.toFixed(0)}
+            />
+          }
+          icon={MousePointerClick}
+        />
       </div>
 
-      <div className="rounded-2xl bg-card border border-border p-6 mb-6">
-        <h3 className="font-bold text-lg mb-4">Active Campaign Strategies (5)</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {campaigns.map((c) => (
-            <div key={c.channel} className="rounded-xl border border-border overflow-hidden hover:shadow-card transition">
-              <div className={`h-2 bg-gradient-to-r ${c.color}`} />
-              <div className="p-5">
-                <div className="font-semibold">{c.channel}</div>
-                <div className="mt-3 text-2xl font-bold">{inr(c.spend)} <span className="text-xs font-normal text-muted-foreground">spend</span></div>
-                <div className="mt-2 text-xs text-muted-foreground">{c.metric1}</div>
-                <div className="text-xs text-muted-foreground">{c.metric2}</div>
-                <div className="mt-3 pt-3 border-t border-border flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Conversions</span>
-                  <span className="font-bold text-success">{c.conversions}</span>
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">CAC: {c.spend === 0 ? "₹0 (organic)" : inr(Math.round(c.spend / c.conversions))}</div>
-              </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h3 className="font-semibold">Campaign board</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pause, resume, or record fresh conversions.
+              </p>
             </div>
-          ))}
-        </div>
-        <div className="mt-5 rounded-xl bg-gradient-soft border border-border p-5 flex items-center gap-4">
-          <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center text-primary-foreground"><TrendingUp className="h-6 w-6" /></div>
-          <div className="flex-1">
-            <div className="font-semibold">Total Marketing ROI: {(((ltv * totalConv - totalSpend) / totalSpend) * 100).toFixed(0)}%</div>
-            <div className="text-sm text-muted-foreground">{inr(totalSpend)} spend → {totalConv.toLocaleString("en-IN")} conversions → ~{inr(ltv * totalConv)} projected LTV revenue</div>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+              {state.campaigns.length} tracked channels
+            </span>
           </div>
-        </div>
-      </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Funnel */}
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold mb-4">Conversion Funnel</h3>
-          <div className="space-y-3">
-            {funnel.map((f, i) => {
-              const pct = (f.value / max) * 100;
-              const conv = i > 0 ? ((f.value / funnel[i-1].value) * 100).toFixed(1) : "100";
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {state.campaigns.map((campaign) => {
+              const ctr =
+                campaign.impressions > 0
+                  ? (campaign.clicks / campaign.impressions) * 100
+                  : 0;
+              const conversionRate =
+                campaign.signups > 0
+                  ? (campaign.conversions / campaign.signups) * 100
+                  : 0;
+
               return (
-                <div key={f.stage}>
-                  <div className="flex justify-between text-sm mb-1.5"><span className="font-medium">{f.stage}</span><span className="text-muted-foreground">{f.value.toLocaleString("en-IN")} <span className="text-success">({conv}%)</span></span></div>
-                  <div className="h-9 rounded-lg bg-muted overflow-hidden">
-                    <div className="h-full bg-gradient-primary rounded-lg flex items-center justify-end pr-3 text-xs font-semibold text-primary-foreground transition-all duration-1000" style={{ width: `${pct}%` }}>{pct.toFixed(0)}%</div>
+                <div
+                  key={campaign.id}
+                  className="rounded-xl border border-border p-5"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold">{campaign.channel}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Spend {inr(campaign.spend)}
+                      </div>
+                    </div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                        campaign.status === "active"
+                          ? "bg-success/15 text-success"
+                          : "bg-secondary text-secondary-foreground"
+                      }`}
+                    >
+                      {campaign.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <MiniMetric
+                      label="Impressions"
+                      value={campaign.impressions.toLocaleString("en-IN")}
+                    />
+                    <MiniMetric
+                      label="Clicks"
+                      value={campaign.clicks.toLocaleString("en-IN")}
+                    />
+                    <MiniMetric label="CTR" value={`${ctr.toFixed(1)}%`} />
+                    <MiniMetric
+                      label="Paid conversion"
+                      value={`${conversionRate.toFixed(1)}%`}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => {
+                        toggleCampaign(campaign.id);
+                        toast.success(
+                          campaign.status === "active"
+                            ? "Campaign paused"
+                            : "Campaign reactivated"
+                        );
+                      }}
+                      className="rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground transition hover:bg-accent"
+                    >
+                      {campaign.status === "active" ? "Pause" : "Resume"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        bumpCampaignConversions(campaign.id);
+                        toast.success("Recorded one more conversion");
+                      }}
+                      className="rounded-md bg-acid px-3 py-1.5 text-xs font-semibold text-acid-foreground transition hover:opacity-90"
+                    >
+                      Add conversion
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Social previews */}
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-card border border-border overflow-hidden">
-            <div className="p-4 flex items-center gap-3 border-b border-border">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-500 to-orange-500" />
-              <div><div className="font-semibold text-sm">@edunova.in</div><div className="text-xs text-muted-foreground">Sponsored · Instagram</div></div>
-            </div>
-            <div className="aspect-square bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-primary-foreground text-2xl font-bold p-6 text-center">Career switch in 90 days. Live cohort starts Apr 28.</div>
-            <div className="p-3 flex items-center gap-4 text-muted-foreground text-sm"><Heart className="h-5 w-5" /><MessageCircle className="h-5 w-5" /><Share2 className="h-5 w-5" /></div>
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Create campaign</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Add a new channel and it will instantly affect ROI and funnel stats.
+          </p>
+
+          <form
+            className="mt-5 space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!form.channel.trim()) {
+                toast.error("Channel name is required.");
+                return;
+              }
+
+              createCampaign({
+                channel: form.channel,
+                spend: Number(form.spend) || 0,
+                impressions: Number(form.impressions) || 0,
+                clicks: Number(form.clicks) || 0,
+                signups: Number(form.signups) || 0,
+                conversions: Number(form.conversions) || 0,
+              });
+
+              setForm({
+                channel: "",
+                spend: "",
+                impressions: "",
+                clicks: "",
+                signups: "",
+                conversions: "",
+              });
+              toast.success("Campaign added to the board");
+            }}
+          >
+            <Field
+              label="Channel"
+              value={form.channel}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, channel: value }))
+              }
+              placeholder="YouTube creators"
+            />
+            <Field
+              label="Spend"
+              value={form.spend}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, spend: value }))
+              }
+              placeholder="15000"
+              type="number"
+            />
+            <Field
+              label="Impressions"
+              value={form.impressions}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, impressions: value }))
+              }
+              placeholder="42000"
+              type="number"
+            />
+            <Field
+              label="Clicks"
+              value={form.clicks}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, clicks: value }))
+              }
+              placeholder="2800"
+              type="number"
+            />
+            <Field
+              label="Signups"
+              value={form.signups}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, signups: value }))
+              }
+              placeholder="420"
+              type="number"
+            />
+            <Field
+              label="Conversions"
+              value={form.conversions}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, conversions: value }))
+              }
+              placeholder="95"
+              type="number"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-md bg-acid px-4 py-2.5 text-sm font-semibold text-acid-foreground transition hover:opacity-90"
+            >
+              Add campaign
+            </button>
+          </form>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Funnel</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Aggregated from every tracked campaign.
+          </p>
+          <div className="mt-5 space-y-3">
+            {marketingMetrics.funnel.map((item, index) => {
+              const percentage = (item.value / maxFunnelValue) * 100;
+              const previous =
+                index === 0 ? item.value : marketingMetrics.funnel[index - 1].value;
+              const stageConversion =
+                previous > 0 ? (item.value / previous) * 100 : 0;
+
+              return (
+                <div key={item.stage}>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.stage}</span>
+                    <span className="text-muted-foreground">
+                      {item.value.toLocaleString("en-IN")} ({stageConversion.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="h-9 overflow-hidden rounded-lg bg-muted">
+                    <div
+                      className="flex h-full items-center justify-end rounded-lg bg-gradient-primary pr-3 text-xs font-semibold text-primary-foreground"
+                      style={{ width: `${percentage}%` }}
+                    >
+                      {percentage.toFixed(0)}%
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="rounded-2xl bg-card border border-border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-10 w-10 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">in</div>
-              <div><div className="font-semibold text-sm">EduNova</div><div className="text-xs text-muted-foreground">Promoted · LinkedIn</div></div>
-            </div>
-            <p className="text-sm">"73% of our Bootcamp grads land roles within 90 days. Here's the playbook ↓" — Read the 2026 Career Report.</p>
-            <div className="mt-3 rounded-lg bg-muted aspect-[1.91/1] flex items-center justify-center text-muted-foreground text-sm">2026 Career Report Preview</div>
+        </section>
+
+        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Performance snapshot</h3>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <Snapshot
+              label="CTR"
+              value={`${marketingMetrics.clickThroughRate.toFixed(2)}%`}
+            />
+            <Snapshot
+              label="Signup rate"
+              value={`${marketingMetrics.signupRate.toFixed(2)}%`}
+            />
+            <Snapshot
+              label="Paid conversion"
+              value={`${marketingMetrics.conversionRate.toFixed(2)}%`}
+            />
           </div>
-        </div>
+        </section>
       </div>
     </DashboardLayout>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: ReactNode;
+  icon: typeof Megaphone;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">{label}</div>
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <div className="mt-2 text-2xl font-bold">{value}</div>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-secondary p-3">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function Snapshot({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border p-4">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-2 text-xl font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+      />
+    </label>
   );
 }

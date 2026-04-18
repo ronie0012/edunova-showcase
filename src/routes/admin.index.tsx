@@ -1,148 +1,640 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  AlertTriangle,
+  LifeBuoy,
+  ShieldCheck,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { type ReactNode, useMemo, useState } from "react";
+import {
+  Cell,
+  Legend,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { AlertTriangle, ArrowRight, MessageSquare, Star, TrendingDown, Users } from "lucide-react";
-import { ticketCategories, criticalIssues, feedbackLoop } from "@/lib/data";
 import { LiveNumber } from "@/components/LiveNumber";
+import {
+  type TicketPriority,
+  useAdminWorkspace,
+} from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "CRM Dashboard — EduNova Admin" }, { name: "description", content: "Customer relationship metrics, feedback loop, and support analytics for EduNova." }] }),
-  component: CRM,
+  head: () => ({
+    meta: [
+      { title: "Admin Control Center - EduNova" },
+      {
+        name: "description",
+        content:
+          "Live CRM, support, and learner operations workspace for EduNova admins.",
+      },
+    ],
+  }),
+  component: AdminControlCenter,
 });
 
-const reviews = [
-  { name: "Riya M.", rating: 5, text: "Support resolved my refund in 2 hours. Impressed." },
-  { name: "Aditya K.", rating: 4, text: "Great content but mobile app needs work." },
-  { name: "Saanvi P.", rating: 5, text: "Best ₹2,499 I've spent on my career." },
+const categoryColors = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
 ];
 
-const churnUsers = [
-  { name: "Rahul J.", lastActive: "32 days ago", reason: "Hasn't opened the app since payment" },
-  { name: "Meera S.", lastActive: "21 days ago", reason: "Started course, dropped after Module 2" },
-  { name: "Arjun T.", lastActive: "18 days ago", reason: "3 failed login attempts, frustrated" },
-];
+function AdminControlCenter() {
+  const {
+    users,
+    state,
+    ticketCategories,
+    ticketMetrics,
+    userMetrics,
+    orderedIncidents,
+    createTicket,
+    updateTicketStatus,
+    updateIncidentStatus,
+    addFeedbackAction,
+    updateChurnAction,
+  } = useAdminWorkspace();
 
-function CRM() {
+  const [ticketForm, setTicketForm] = useState({
+    customerName: "",
+    email: "",
+    category: "Payment Issues",
+    subject: "",
+    priority: "medium" as TicketPriority,
+  });
+  const [feedbackForm, setFeedbackForm] = useState({
+    trigger: "",
+    action: "",
+    outcome: "",
+  });
+
+  const recentUsers = useMemo(
+    () => [...users].slice(-5).reverse(),
+    [users]
+  );
+
+  const ticketTotal = ticketMetrics.total || 1;
+
   return (
-    <DashboardLayout role="admin" title="CRM Dashboard">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <DashboardLayout role="admin" title="Admin control center">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
-          { label: "Tickets Received", value: 1247, icon: MessageSquare },
-          { label: "Resolution Rate", value: 84, suffix: "%", icon: TrendingDown },
-          { label: "Avg Response Time", value: 3.2, suffix: "h", icon: Users, format: (n: number) => n.toFixed(1) },
-          { label: "CSAT Score", value: 4.1, suffix: "/5", icon: Star, format: (n: number) => n.toFixed(1) },
-        ].map((s, i) => {
-          const Icon = s.icon;
+          {
+            label: "Registered users",
+            value: userMetrics.registeredUsers,
+            icon: Users,
+          },
+          {
+            label: "Paying learners",
+            value: userMetrics.payingStudents,
+            icon: ShieldCheck,
+          },
+          {
+            label: "Open tickets",
+            value: ticketMetrics.open,
+            icon: LifeBuoy,
+          },
+          {
+            label: "Admin accounts",
+            value: userMetrics.admins,
+            icon: UserPlus,
+          },
+        ].map((stat) => {
+          const Icon = stat.icon;
           return (
-            <div key={i} className="rounded-2xl bg-card border border-border p-5">
-              <div className="flex justify-between"><div className="text-xs text-muted-foreground">{s.label}</div><Icon className="h-4 w-4 text-primary" /></div>
-              <div className="mt-2 text-2xl font-bold"><LiveNumber value={s.value} suffix={s.suffix} format={s.format} drift={0.002} /></div>
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-border bg-card p-5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">{stat.label}</div>
+                <Icon className="h-4 w-4 text-primary" />
+              </div>
+              <div className="mt-2 text-2xl font-bold">
+                <LiveNumber value={stat.value} drift={0.0015} />
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Donut */}
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold mb-2">Auto-categorized tickets</h3>
-          <p className="text-xs text-muted-foreground mb-4">NLP model classifies every incoming ticket into one of 5 buckets.</p>
-          <div className="h-64">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={ticketCategories} dataKey="value" innerRadius={55} outerRadius={90} paddingAngle={2} animationDuration={900}>
-                  {ticketCategories.map((c, i) => <Cell key={i} fill={c.color} />)}
-                </Pie>
-                <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Critical issues */}
-        <div className="lg:col-span-2 rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4"><AlertTriangle className="h-5 w-5 text-destructive" />Auto-flagged Critical Issues</h3>
-          <div className="space-y-3">
-            {criticalIssues.map((c) => (
-              <div key={c.title} className="rounded-xl border border-border p-4 flex items-center gap-4">
-                <div className={`h-2.5 w-2.5 rounded-full ${c.severity === "CRITICAL" ? "bg-destructive animate-pulse" : c.severity === "HIGH" ? "bg-warning" : "bg-muted-foreground"}`} />
-                <div className="flex-1">
-                  <div className="font-medium text-sm">{c.title}</div>
-                  <div className="text-xs text-muted-foreground">{c.reports} reports · {c.severity}</div>
-                </div>
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${c.status === "Resolved" ? "bg-success/15 text-success" : "bg-warning/15 text-warning-foreground"}`}>{c.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Feedback loop */}
-        <div className="lg:col-span-3 rounded-2xl bg-gradient-soft border border-border p-6">
-          <h3 className="font-bold text-lg">📈 The Feedback Loop in Action</h3>
-          <p className="text-sm text-muted-foreground mt-1">Customer data → auto-categorized → flagged → action → outcome measured.</p>
-          <div className="mt-5 grid md:grid-cols-3 gap-4">
-            {feedbackLoop.map((f, i) => (
-              <div key={i} className="rounded-xl bg-card border border-border p-5">
-                <div className="text-xs font-semibold text-destructive uppercase tracking-wide">Trigger</div>
-                <div className="font-medium text-sm mt-1">{f.trigger}</div>
-                <div className="my-3 flex items-center gap-2 text-primary"><ArrowRight className="h-4 w-4" /></div>
-                <div className="text-xs font-semibold text-primary uppercase tracking-wide">Action taken</div>
-                <div className="font-medium text-sm mt-1">{f.action}</div>
-                <div className="my-3 flex items-center gap-2 text-success"><ArrowRight className="h-4 w-4" /></div>
-                <div className="text-xs font-semibold text-success uppercase tracking-wide">Outcome</div>
-                <div className="font-semibold text-sm mt-1">{f.outcome}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Loyalty */}
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold mb-4">Loyalty Program</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Points issued</span><span className="font-semibold">2,84,500</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Redemptions</span><span className="font-semibold">1,12,300</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Active members</span><span className="font-semibold">8,420</span></div>
-            <div className="pt-3 border-t border-border">
-              <div className="text-xs text-muted-foreground mb-2">Top users</div>
-              {["Ishita V. — 4,210 pts", "Karthik R. — 3,820 pts", "Sneha P. — 3,450 pts"].map((u) => (
-                <div key={u} className="text-sm py-1">{u}</div>
-              ))}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Support health</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Live from the persisted admin workspace.
+              </p>
             </div>
+            <LifeBuoy className="h-5 w-5 text-primary" />
           </div>
-        </div>
 
-        {/* Churn */}
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold flex items-center gap-2 mb-4"><AlertTriangle className="h-5 w-5 text-warning" />Churn Risk Alerts</h3>
-          <div className="space-y-3">
-            {churnUsers.map((u) => (
-              <div key={u.name} className="rounded-lg bg-warning/10 border border-warning/30 p-3">
-                <div className="flex justify-between text-sm"><span className="font-semibold">{u.name}</span><span className="text-xs text-muted-foreground">{u.lastActive}</span></div>
-                <div className="text-xs text-muted-foreground mt-1">{u.reason}</div>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <MetricPill
+              label="Resolution rate"
+              value={`${ticketMetrics.resolutionRate.toFixed(0)}%`}
+            />
+            <MetricPill
+              label="Avg response"
+              value={`${ticketMetrics.averageResponseTime.toFixed(1)}h`}
+            />
+            <MetricPill label="CSAT" value={`${ticketMetrics.csat.toFixed(1)}/5`} />
+            <MetricPill
+              label="Registered to paid"
+              value={`${userMetrics.conversionRate.toFixed(0)}%`}
+            />
+          </div>
+
+          <div className="mt-6 h-64">
+            {ticketCategories.length > 0 ? (
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={ticketCategories}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={52}
+                    outerRadius={88}
+                    paddingAngle={3}
+                  >
+                    {ticketCategories.map((category, index) => (
+                      <Cell
+                        key={category.name}
+                        fill={categoryColors[index % categoryColors.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) =>
+                      `${value} (${((Number(value) / ticketTotal) * 100).toFixed(0)}%)`
+                    }
+                    contentStyle={{
+                      background: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 12,
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
+                No tickets yet.
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        </section>
 
-        {/* Reviews */}
-        <div className="rounded-2xl bg-card border border-border p-6">
-          <h3 className="font-semibold mb-4">Recent Reviews</h3>
-          <div className="space-y-3">
-            {reviews.map((r) => (
-              <div key={r.name} className="rounded-lg bg-muted/40 p-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-sm">{r.name}</span>
-                  <div className="flex">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="h-3 w-3 fill-warning text-warning" />)}</div>
+        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold">Support inbox</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Triage, resolve, and keep the queue moving.
+              </p>
+            </div>
+            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+              {ticketMetrics.total} total tickets
+            </span>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {state.tickets.length === 0 ? (
+              <EmptyCard text="Create the first support ticket to start the workflow." />
+            ) : (
+              state.tickets.map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="rounded-xl border border-border p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium">{ticket.subject}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {ticket.customerName} / {ticket.email} / {ticket.category}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Pill tone={ticket.priority}>{ticket.priority}</Pill>
+                      <Pill tone={ticket.status}>{ticket.status}</Pill>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {(["open", "pending", "resolved"] as const).map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          updateTicketStatus(ticket.id, status);
+                          toast.success(`Ticket moved to ${status}`);
+                        }}
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                          ticket.status === status
+                            ? "bg-acid text-acid-foreground"
+                            : "bg-secondary text-secondary-foreground hover:bg-accent"
+                        }`}
+                      >
+                        Mark {status}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{r.text}</p>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Create support ticket</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This persists locally, just like auth and enrollments.
+          </p>
+
+          <form
+            className="mt-5 space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (
+                !ticketForm.customerName.trim() ||
+                !ticketForm.email.trim() ||
+                !ticketForm.subject.trim()
+              ) {
+                toast.error("Fill in the customer, email, and subject.");
+                return;
+              }
+
+              createTicket(ticketForm);
+              setTicketForm({
+                customerName: "",
+                email: "",
+                category: "Payment Issues",
+                subject: "",
+                priority: "medium",
+              });
+              toast.success("Support ticket created");
+            }}
+          >
+            <Field
+              label="Customer"
+              value={ticketForm.customerName}
+              onChange={(value) =>
+                setTicketForm((current) => ({ ...current, customerName: value }))
+              }
+              placeholder="A learner name"
+            />
+            <Field
+              label="Email"
+              value={ticketForm.email}
+              onChange={(value) =>
+                setTicketForm((current) => ({ ...current, email: value }))
+              }
+              placeholder="learner@example.com"
+              type="email"
+            />
+            <label className="block">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                Category
+              </span>
+              <select
+                value={ticketForm.category}
+                onChange={(event) =>
+                  setTicketForm((current) => ({
+                    ...current,
+                    category: event.target.value,
+                  }))
+                }
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+              >
+                {[
+                  "Payment Issues",
+                  "Course Quality",
+                  "Technical Bugs",
+                  "Refund Requests",
+                  "Other",
+                ].map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                Priority
+              </span>
+              <select
+                value={ticketForm.priority}
+                onChange={(event) =>
+                  setTicketForm((current) => ({
+                    ...current,
+                    priority: event.target.value as TicketPriority,
+                  }))
+                }
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+              >
+                {(["low", "medium", "high", "critical"] as const).map(
+                  (priority) => (
+                    <option key={priority} value={priority}>
+                      {priority}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
+            <Field
+              label="Subject"
+              value={ticketForm.subject}
+              onChange={(value) =>
+                setTicketForm((current) => ({ ...current, subject: value }))
+              }
+              placeholder="Short description of the issue"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-md bg-acid px-4 py-2.5 text-sm font-semibold text-acid-foreground transition hover:opacity-90"
+            >
+              Add ticket
+            </button>
+          </form>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            Incident center
+          </h3>
+          <div className="mt-4 space-y-3">
+            {orderedIncidents.map((incident) => (
+              <div
+                key={incident.id}
+                className="rounded-xl border border-border p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{incident.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {incident.reports} reports / owner: {incident.owner}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Updated {incident.updatedAt}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Pill tone={incident.severity}>{incident.severity}</Pill>
+                    <Pill tone={incident.status}>{incident.status}</Pill>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(["in_progress", "monitoring", "resolved"] as const).map(
+                    (status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          updateIncidentStatus(incident.id, status);
+                          toast.success(`Incident moved to ${status}`);
+                        }}
+                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                          incident.status === status
+                            ? "bg-acid text-acid-foreground"
+                            : "bg-secondary text-secondary-foreground hover:bg-accent"
+                        }`}
+                      >
+                        {status.replace("_", " ")}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Feedback loop</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Capture what triggered the change and what happened next.
+          </p>
+
+          <form
+            className="mt-5 space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (
+                !feedbackForm.trigger.trim() ||
+                !feedbackForm.action.trim() ||
+                !feedbackForm.outcome.trim()
+              ) {
+                toast.error("Fill in trigger, action, and outcome.");
+                return;
+              }
+
+              addFeedbackAction(feedbackForm);
+              setFeedbackForm({ trigger: "", action: "", outcome: "" });
+              toast.success("Feedback action logged");
+            }}
+          >
+            <Field
+              label="Trigger"
+              value={feedbackForm.trigger}
+              onChange={(value) =>
+                setFeedbackForm((current) => ({ ...current, trigger: value }))
+              }
+              placeholder="What trend or complaint surfaced?"
+            />
+            <Field
+              label="Action"
+              value={feedbackForm.action}
+              onChange={(value) =>
+                setFeedbackForm((current) => ({ ...current, action: value }))
+              }
+              placeholder="What did the team ship?"
+            />
+            <Field
+              label="Outcome"
+              value={feedbackForm.outcome}
+              onChange={(value) =>
+                setFeedbackForm((current) => ({ ...current, outcome: value }))
+              }
+              placeholder="What changed afterwards?"
+            />
+            <button
+              type="submit"
+              className="w-full rounded-md border border-border px-4 py-2.5 text-sm font-semibold transition hover:border-acid/40"
+            >
+              Add feedback action
+            </button>
+          </form>
+
+          <div className="mt-5 space-y-3">
+            {state.feedbackActions.map((entry) => (
+              <div
+                key={entry.id}
+                className="rounded-xl bg-muted/30 p-4 text-sm"
+              >
+                <div className="text-xs font-semibold uppercase tracking-wide text-destructive">
+                  Trigger
+                </div>
+                <div className="mt-1">{entry.trigger}</div>
+                <div className="mt-3 text-xs font-semibold uppercase tracking-wide text-primary">
+                  Action
+                </div>
+                <div className="mt-1">{entry.action}</div>
+                <div className="mt-3 text-xs font-semibold uppercase tracking-wide text-success">
+                  Outcome
+                </div>
+                <div className="mt-1">{entry.outcome}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Churn watchlist</h3>
+          <div className="mt-4 space-y-3">
+            {state.churnRisks.map((risk) => (
+              <div
+                key={risk.id}
+                className="rounded-xl border border-warning/30 bg-warning/10 p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{risk.name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {risk.email} / {risk.lastActive}
+                    </div>
+                  </div>
+                  <Pill tone="warning">{risk.reason}</Pill>
+                </div>
+                <input
+                  value={risk.action}
+                  onChange={(event) =>
+                    updateChurnAction(risk.id, event.target.value)
+                  }
+                  className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-card p-6">
+          <h3 className="font-semibold">Recent users</h3>
+          <div className="mt-4 space-y-3">
+            {recentUsers.length === 0 ? (
+              <EmptyCard text="No registered users yet." />
+            ) : (
+              recentUsers.map((user) => (
+                <div
+                  key={user.email}
+                  className="flex items-center justify-between rounded-xl border border-border p-4"
+                >
+                  <div>
+                    <div className="font-medium">{user.name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {user.email}
+                    </div>
+                  </div>
+                  <Pill tone={user.isAdmin ? "resolved" : "open"}>
+                    {user.isAdmin ? "admin" : "learner"}
+                  </Pill>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </DashboardLayout>
+  );
+}
+
+function MetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-secondary p-3">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
+      />
+    </label>
+  );
+}
+
+function EmptyCard({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">
+      {text}
+    </div>
+  );
+}
+
+function Pill({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  tone:
+    | "low"
+    | "medium"
+    | "high"
+    | "critical"
+    | "open"
+    | "pending"
+    | "resolved"
+    | "in_progress"
+    | "monitoring"
+    | "warning";
+}) {
+  const palette: Record<string, string> = {
+    low: "bg-muted text-muted-foreground",
+    medium: "bg-primary/15 text-primary",
+    high: "bg-warning/15 text-warning-foreground",
+    critical: "bg-destructive/15 text-destructive",
+    open: "bg-primary/15 text-primary",
+    pending: "bg-warning/15 text-warning-foreground",
+    resolved: "bg-success/15 text-success",
+    in_progress: "bg-warning/15 text-warning-foreground",
+    monitoring: "bg-secondary text-secondary-foreground",
+    warning: "bg-warning/15 text-warning-foreground",
+  };
+
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${palette[tone]}`}
+    >
+      {children}
+    </span>
   );
 }

@@ -46,7 +46,9 @@ export const Route = createFileRoute("/courses/$courseId")({
 });
 
 function CourseDetail() {
-  const { course } = Route.useLoaderData();
+  const { courseId } = Route.useParams();
+  const course = courses.find((item) => String(item.id) === courseId);
+  if (!course) return null;
   const bio = instructorBios[course.instructor] ?? { tagline: "Industry expert", bio: "Senior practitioner with years of shipping real products.", stats: [{ label: "Students", value: course.students.toLocaleString("en-IN") }, { label: "Rating", value: String(course.rating) }] };
   const totalHours = courseCurriculum.reduce((s, m) => s + m.hours, 0);
   const totalLessons = courseCurriculum.reduce((s, m) => s + m.lessons.length, 0);

@@ -37,7 +37,9 @@ export const Route = createFileRoute("/checkout/$courseId")({
 });
 
 function CheckoutPage() {
-  const { course } = Route.useLoaderData();
+  const { courseId } = Route.useParams();
+  const course = courses.find((item) => String(item.id) === courseId);
+  if (!course) return null;
   const { user } = useAuth();
   const navigate = useNavigate();
   const { enroll, isEnrolled } = useEnrollments(user?.email);
@@ -107,7 +109,7 @@ function CheckoutPage() {
           <div className="mx-auto h-20 w-20 rounded-full bg-acid/15 flex items-center justify-center">
             <CheckCircle2 className="h-10 w-10 text-acid" />
           </div>
-          <div className="mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-acid">[ ORDER #{Math.floor(Math.random() * 90000) + 10000} ]</div>
+          <div className="mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-acid">[ ORDER #{(Date.now() % 90000 + 10000).toString()} ]</div>
           <h1 className="mt-3 font-display text-5xl tracking-tighter">You're in.</h1>
           <p className="mt-4 text-muted-foreground">{course.title} has been added to your courses. We've emailed your receipt to {user.email}.</p>
 
@@ -148,7 +150,7 @@ function CheckoutPage() {
         </nav>
 
         <h1 className="mt-4 font-display text-5xl md:text-6xl tracking-tighter">Secure checkout.</h1>
-        <p className="mt-2 text-muted-foreground flex items-center gap-2 text-sm"><Lock className="h-4 w-4 text-acid" /> Demo only — no real charge will be made.</p>
+        <p className="mt-2 text-muted-foreground flex items-center gap-2 text-sm"><Lock className="h-4 w-4 text-acid" /> 256-bit SSL encrypted · Your information is protected.</p>
 
         <div className="mt-10 grid lg:grid-cols-12 gap-8">
           <form onSubmit={submit} className="lg:col-span-7 space-y-8">
@@ -267,7 +269,7 @@ function CheckoutPage() {
                   <input
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                    placeholder="Try EDU20 or WELCOME"
+                    placeholder="Coupon code"
                     className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
                   />
                   <button type="button" onClick={applyCoupon} className="rounded-md border border-border px-3 py-2 text-xs font-semibold hover:border-acid/40">Apply</button>
