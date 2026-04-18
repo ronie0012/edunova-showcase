@@ -145,6 +145,9 @@
 @layer utilities {
   .bg-gradient-primary { background: var(--gradient-primary); }
   .bg-gradient-acid { background: var(--gradient-acid); }
+  .bg-gradient-soft {
+    background: linear-gradient(135deg, color-mix(in oklab, var(--primary) 18%, var(--card)), color-mix(in oklab, var(--acid) 12%, var(--card)));
+  }
   .bg-gradient-hero { background: var(--gradient-hero); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
   .shadow-card { box-shadow: var(--shadow-card); }
