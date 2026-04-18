@@ -9,38 +9,207 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StudentRouteImport } from './routes/student'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as InstructorRouteImport } from './routes/instructor'
+import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminSecurityRouteImport } from './routes/admin.security'
+import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
+import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
+import { Route as AdminMarketingRouteImport } from './routes/admin.marketing'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstructorRoute = InstructorRouteImport.update({
+  id: '/instructor',
+  path: '/instructor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursesRoute = CoursesRouteImport.update({
+  id: '/courses',
+  path: '/courses',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSecurityRoute = AdminSecurityRouteImport.update({
+  id: '/admin/security',
+  path: '/admin/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRevenueRoute = AdminRevenueRouteImport.update({
+  id: '/admin/revenue',
+  path: '/admin/revenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminOperationsRoute = AdminOperationsRouteImport.update({
+  id: '/admin/operations',
+  path: '/admin/operations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMarketingRoute = AdminMarketingRouteImport.update({
+  id: '/admin/marketing',
+  path: '/admin/marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/courses': typeof CoursesRoute
+  '/instructor': typeof InstructorRoute
+  '/privacy': typeof PrivacyRoute
+  '/student': typeof StudentRoute
+  '/terms': typeof TermsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/courses': typeof CoursesRoute
+  '/instructor': typeof InstructorRoute
+  '/privacy': typeof PrivacyRoute
+  '/student': typeof StudentRoute
+  '/terms': typeof TermsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/courses': typeof CoursesRoute
+  '/instructor': typeof InstructorRoute
+  '/privacy': typeof PrivacyRoute
+  '/student': typeof StudentRoute
+  '/terms': typeof TermsRoute
+  '/admin/marketing': typeof AdminMarketingRoute
+  '/admin/operations': typeof AdminOperationsRoute
+  '/admin/revenue': typeof AdminRevenueRoute
+  '/admin/security': typeof AdminSecurityRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/courses'
+    | '/instructor'
+    | '/privacy'
+    | '/student'
+    | '/terms'
+    | '/admin/marketing'
+    | '/admin/operations'
+    | '/admin/revenue'
+    | '/admin/security'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/courses'
+    | '/instructor'
+    | '/privacy'
+    | '/student'
+    | '/terms'
+    | '/admin/marketing'
+    | '/admin/operations'
+    | '/admin/revenue'
+    | '/admin/security'
+    | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/courses'
+    | '/instructor'
+    | '/privacy'
+    | '/student'
+    | '/terms'
+    | '/admin/marketing'
+    | '/admin/operations'
+    | '/admin/revenue'
+    | '/admin/security'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CoursesRoute: typeof CoursesRoute
+  InstructorRoute: typeof InstructorRoute
+  PrivacyRoute: typeof PrivacyRoute
+  StudentRoute: typeof StudentRoute
+  TermsRoute: typeof TermsRoute
+  AdminMarketingRoute: typeof AdminMarketingRoute
+  AdminOperationsRoute: typeof AdminOperationsRoute
+  AdminRevenueRoute: typeof AdminRevenueRoute
+  AdminSecurityRoute: typeof AdminSecurityRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/instructor': {
+      id: '/instructor'
+      path: '/instructor'
+      fullPath: '/instructor'
+      preLoaderRoute: typeof InstructorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/courses': {
+      id: '/courses'
+      path: '/courses'
+      fullPath: '/courses'
+      preLoaderRoute: typeof CoursesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,21 +217,57 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/security': {
+      id: '/admin/security'
+      path: '/admin/security'
+      fullPath: '/admin/security'
+      preLoaderRoute: typeof AdminSecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/revenue': {
+      id: '/admin/revenue'
+      path: '/admin/revenue'
+      fullPath: '/admin/revenue'
+      preLoaderRoute: typeof AdminRevenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/operations': {
+      id: '/admin/operations'
+      path: '/admin/operations'
+      fullPath: '/admin/operations'
+      preLoaderRoute: typeof AdminOperationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/marketing': {
+      id: '/admin/marketing'
+      path: '/admin/marketing'
+      fullPath: '/admin/marketing'
+      preLoaderRoute: typeof AdminMarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CoursesRoute: CoursesRoute,
+  InstructorRoute: InstructorRoute,
+  PrivacyRoute: PrivacyRoute,
+  StudentRoute: StudentRoute,
+  TermsRoute: TermsRoute,
+  AdminMarketingRoute: AdminMarketingRoute,
+  AdminOperationsRoute: AdminOperationsRoute,
+  AdminRevenueRoute: AdminRevenueRoute,
+  AdminSecurityRoute: AdminSecurityRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
