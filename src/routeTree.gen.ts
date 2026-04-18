@@ -16,6 +16,7 @@ import { Route as InstructorRouteImport } from './routes/instructor'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CoursesCourseIdRouteImport } from './routes/courses.$courseId'
 import { Route as AdminSecurityRouteImport } from './routes/admin.security'
 import { Route as AdminRevenueRouteImport } from './routes/admin.revenue'
 import { Route as AdminOperationsRouteImport } from './routes/admin.operations'
@@ -56,6 +57,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoursesCourseIdRoute = CoursesCourseIdRouteImport.update({
+  id: '/$courseId',
+  path: '/$courseId',
+  getParentRoute: () => CoursesRoute,
+} as any)
 const AdminSecurityRoute = AdminSecurityRouteImport.update({
   id: '/admin/security',
   path: '/admin/security',
@@ -79,7 +85,7 @@ const AdminMarketingRoute = AdminMarketingRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/courses': typeof CoursesRoute
+  '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
   '/privacy': typeof PrivacyRoute
   '/student': typeof StudentRoute
@@ -88,11 +94,12 @@ export interface FileRoutesByFullPath {
   '/admin/operations': typeof AdminOperationsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/security': typeof AdminSecurityRoute
+  '/courses/$courseId': typeof CoursesCourseIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/courses': typeof CoursesRoute
+  '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
   '/privacy': typeof PrivacyRoute
   '/student': typeof StudentRoute
@@ -101,12 +108,13 @@ export interface FileRoutesByTo {
   '/admin/operations': typeof AdminOperationsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/security': typeof AdminSecurityRoute
+  '/courses/$courseId': typeof CoursesCourseIdRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/courses': typeof CoursesRoute
+  '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
   '/privacy': typeof PrivacyRoute
   '/student': typeof StudentRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   '/admin/operations': typeof AdminOperationsRoute
   '/admin/revenue': typeof AdminRevenueRoute
   '/admin/security': typeof AdminSecurityRoute
+  '/courses/$courseId': typeof CoursesCourseIdRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +139,7 @@ export interface FileRouteTypes {
     | '/admin/operations'
     | '/admin/revenue'
     | '/admin/security'
+    | '/courses/$courseId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/admin/operations'
     | '/admin/revenue'
     | '/admin/security'
+    | '/courses/$courseId'
     | '/admin'
   id:
     | '__root__'
@@ -156,12 +167,13 @@ export interface FileRouteTypes {
     | '/admin/operations'
     | '/admin/revenue'
     | '/admin/security'
+    | '/courses/$courseId'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CoursesRoute: typeof CoursesRoute
+  CoursesRoute: typeof CoursesRouteWithChildren
   InstructorRoute: typeof InstructorRoute
   PrivacyRoute: typeof PrivacyRoute
   StudentRoute: typeof StudentRoute
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/courses/$courseId': {
+      id: '/courses/$courseId'
+      path: '/$courseId'
+      fullPath: '/courses/$courseId'
+      preLoaderRoute: typeof CoursesCourseIdRouteImport
+      parentRoute: typeof CoursesRoute
+    }
     '/admin/security': {
       id: '/admin/security'
       path: '/admin/security'
@@ -255,9 +274,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CoursesRouteChildren {
+  CoursesCourseIdRoute: typeof CoursesCourseIdRoute
+}
+
+const CoursesRouteChildren: CoursesRouteChildren = {
+  CoursesCourseIdRoute: CoursesCourseIdRoute,
+}
+
+const CoursesRouteWithChildren =
+  CoursesRoute._addFileChildren(CoursesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CoursesRoute: CoursesRoute,
+  CoursesRoute: CoursesRouteWithChildren,
   InstructorRoute: InstructorRoute,
   PrivacyRoute: PrivacyRoute,
   StudentRoute: StudentRoute,
