@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { inr } from "@/lib/data";
 import { LiveNumber } from "@/components/LiveNumber";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/instructor")({
   head: () => ({ meta: [{ title: "Instructor Dashboard — EduNova" }, { name: "description", content: "Manage your courses, students and earnings on EduNova." }] }),
@@ -35,7 +36,7 @@ const feedback = [
 function InstructorDashboard() {
   const [modal, setModal] = useState(false);
   return (
-    <DashboardLayout role="instructor" title="Instructor Dashboard">
+    <DashboardLayout role="instructor" title="Instructor dashboard">
       <div className="grid md:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total Students", value: 19510 },
@@ -129,7 +130,7 @@ function InstructorDashboard() {
                 <input className="rounded-lg border border-input bg-background px-3 py-2 text-sm" placeholder="Price ₹" />
               </div>
               <div className="rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground">Drag & drop course videos here</div>
-              <button onClick={() => setModal(false)} className="w-full rounded-lg bg-gradient-primary text-primary-foreground py-2.5 font-semibold">Submit for Review</button>
+              <button onClick={() => { setModal(false); toast.success("Course submitted for review", { description: "We'll get back within 48h." }); }} className="w-full rounded-md bg-acid text-acid-foreground py-2.5 font-semibold hover:opacity-90 transition">Submit for Review</button>
             </div>
           </div>
         </div>
