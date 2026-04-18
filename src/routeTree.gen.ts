@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StudentRouteImport } from './routes/student'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as InstructorRouteImport } from './routes/instructor'
 import { Route as CoursesRouteImport } from './routes/courses'
 import { Route as IndexRouteImport } from './routes/index'
@@ -32,9 +34,19 @@ const StudentRoute = StudentRouteImport.update({
   path: '/student',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InstructorRoute = InstructorRouteImport.update({
@@ -87,7 +99,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
+  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/signup': typeof SignupRoute
   '/student': typeof StudentRoute
   '/terms': typeof TermsRoute
   '/admin/marketing': typeof AdminMarketingRoute
@@ -101,7 +115,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
+  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/signup': typeof SignupRoute
   '/student': typeof StudentRoute
   '/terms': typeof TermsRoute
   '/admin/marketing': typeof AdminMarketingRoute
@@ -116,7 +132,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/courses': typeof CoursesRouteWithChildren
   '/instructor': typeof InstructorRoute
+  '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/signup': typeof SignupRoute
   '/student': typeof StudentRoute
   '/terms': typeof TermsRoute
   '/admin/marketing': typeof AdminMarketingRoute
@@ -132,7 +150,9 @@ export interface FileRouteTypes {
     | '/'
     | '/courses'
     | '/instructor'
+    | '/login'
     | '/privacy'
+    | '/signup'
     | '/student'
     | '/terms'
     | '/admin/marketing'
@@ -146,7 +166,9 @@ export interface FileRouteTypes {
     | '/'
     | '/courses'
     | '/instructor'
+    | '/login'
     | '/privacy'
+    | '/signup'
     | '/student'
     | '/terms'
     | '/admin/marketing'
@@ -160,7 +182,9 @@ export interface FileRouteTypes {
     | '/'
     | '/courses'
     | '/instructor'
+    | '/login'
     | '/privacy'
+    | '/signup'
     | '/student'
     | '/terms'
     | '/admin/marketing'
@@ -175,7 +199,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CoursesRoute: typeof CoursesRouteWithChildren
   InstructorRoute: typeof InstructorRoute
+  LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  SignupRoute: typeof SignupRoute
   StudentRoute: typeof StudentRoute
   TermsRoute: typeof TermsRoute
   AdminMarketingRoute: typeof AdminMarketingRoute
@@ -201,11 +227,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/instructor': {
@@ -289,7 +329,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CoursesRoute: CoursesRouteWithChildren,
   InstructorRoute: InstructorRoute,
+  LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  SignupRoute: SignupRoute,
   StudentRoute: StudentRoute,
   TermsRoute: TermsRoute,
   AdminMarketingRoute: AdminMarketingRoute,
@@ -301,3 +343,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
