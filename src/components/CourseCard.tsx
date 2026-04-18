@@ -1,6 +1,8 @@
 import { Star, Users, ArrowUpRight, Clock } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { inr } from "@/lib/data";
+import { useAuth } from "@/lib/auth";
+import { useEnrollments } from "@/lib/enrollments";
 import { toast } from "sonner";
 
 type Props = {
@@ -17,6 +19,25 @@ type Props = {
 };
 
 export function CourseCard({ id, title, instructor, rating, students, price, color, category, level, hours }: Props) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isEnrolled } = useEnrollments(user?.email);
+  const enrolled = isEnrolled(id);
+
+  const handleClick = () => {
+    if (enrolled) {
+      toast.success("Already enrolled · opening course");
+      navigate({ to: "/student" });
+      return;
+    }
+    if (!user) {
+      toast.message("Sign in to continue");
+      navigate({ to: "/login", search: { redirect: `/checkout/${id}` } as never });
+      return;
+    }
+    navigate({ to: "/checkout/$courseId", params: { courseId: String(id) } });
+  };
+
   return (
     <div className="group relative rounded-xl bg-card border border-border overflow-hidden hover:border-acid/40 transition-all duration-300 hover:-translate-y-1 hover:shadow-elegant">
       <Link to="/courses/$courseId" params={{ courseId: String(id) }} className={`relative block h-40 bg-gradient-to-br ${color} overflow-hidden`}>
@@ -45,10 +66,10 @@ export function CourseCard({ id, title, instructor, rating, students, price, col
             <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">one-time</div>
           </div>
           <button
-            onClick={() => toast.success(`Enrolled in ${title}`, { description: "Check your email for access." })}
+            onClick={handleClick}
             className="group/btn inline-flex items-center gap-1 rounded-md bg-foreground text-background px-3 py-2 text-xs font-semibold hover:bg-acid hover:text-acid-foreground transition"
           >
-            Enroll <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/btn:rotate-45" />
+            {enrolled ? "Open" : "Buy now"} <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover/btn:rotate-45" />
           </button>
         </div>
       </div>
