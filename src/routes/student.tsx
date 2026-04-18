@@ -4,15 +4,17 @@ import { Award, Bell, Calendar, PlayCircle, Target, ArrowUpRight } from "lucide-
 import { CourseCard } from "@/components/CourseCard";
 import { courses } from "@/lib/data";
 import { LiveNumber } from "@/components/LiveNumber";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { useEnrollments } from "@/lib/enrollments";
 
 export const Route = createFileRoute("/student")({
   head: () => ({ meta: [{ title: "Student Dashboard — EduNova" }, { name: "description", content: "Your courses, progress and upcoming sessions on EduNova." }] }),
   component: StudentDashboard,
 });
 
-const myCourses = [
+const seedCourses = [
   { id: 1, title: "Full-Stack Web Dev Bootcamp", progress: 68, next: "Module 12: REST APIs" },
   { id: 4, title: "Data Science with Python", progress: 32, next: "Module 4: Pandas Deep Dive" },
   { id: 6, title: "Public Speaking & Confidence", progress: 91, next: "Final Project Submission" },
@@ -39,6 +41,19 @@ const notifications = [
 
 function StudentDashboard() {
   const [rsvp, setRsvp] = useState<Record<number, boolean>>({});
+  const { user } = useAuth();
+  const { enrollments } = useEnrollments(user?.email);
+  const myCourses = useMemo(() => {
+    const purchased = enrollments
+      .map((e) => {
+        const c = courses.find((x) => x.id === e.courseId);
+        if (!c) return null;
+        return { id: c.id, title: c.title, progress: e.progress || 5, next: "Module 1: Get started" };
+      })
+      .filter(Boolean) as { id: number; title: string; progress: number; next: string }[];
+    const seen = new Set(purchased.map((p) => p.id));
+    return [...purchased, ...seedCourses.filter((s) => !seen.has(s.id))];
+  }, [enrollments]);
   return (
     <DashboardLayout role="student" title="Student dashboard">
       {/* Welcome */}
