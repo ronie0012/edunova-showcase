@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LiveNumber } from "@/components/LiveNumber";
+import { getErrorMessage } from "@/lib/errors";
 import { type LeadStage, type ReviewStatus, useAdminWorkspace } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/operations")({
@@ -51,6 +52,19 @@ function OperationsDashboard() {
   const averageLatency = 120 + operationsMetrics.pendingReviews * 4;
   const liveSessions = state.servers.reduce((sum, server) => sum + server.load, 0) * 8;
 
+  const runAdminAction = async (
+    action: () => Promise<void>,
+    successMessage: string,
+    failureMessage: string
+  ) => {
+    try {
+      await action();
+      toast.success(successMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, failureMessage));
+    }
+  };
+
   return (
     <DashboardLayout role="admin" title="Operations dashboard">
       <div className="grid gap-4 md:grid-cols-3">
@@ -66,9 +80,7 @@ function OperationsDashboard() {
               format={(value) => value.toFixed(2)}
             />
           </div>
-          <div className="mt-1 text-xs opacity-80">
-            Estimated from current server health states
-          </div>
+          <div className="mt-1 text-xs opacity-80">Estimated from current server health states</div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6">
@@ -99,14 +111,20 @@ function OperationsDashboard() {
             className="mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
+
               if (!leadForm.name.trim() || !leadForm.expertise.trim()) {
                 toast.error("Name and expertise are required.");
                 return;
               }
 
-              addInstructorLead(leadForm);
-              setLeadForm({ name: "", expertise: "" });
-              toast.success("Instructor lead added");
+              void runAdminAction(
+                async () => {
+                  await addInstructorLead(leadForm);
+                  setLeadForm({ name: "", expertise: "" });
+                },
+                "Instructor lead added",
+                "Unable to add instructor lead."
+              );
             }}
           >
             <Field
@@ -134,14 +152,11 @@ function OperationsDashboard() {
           </form>
         </section>
 
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <h3 className="font-semibold">Instructor pipeline</h3>
           <div className="mt-5 space-y-5">
             {operationsMetrics.pipeline.map((stage) => {
-              const max = Math.max(
-                ...operationsMetrics.pipeline.map((item) => item.count),
-                1
-              );
+              const max = Math.max(...operationsMetrics.pipeline.map((item) => item.count), 1);
               const width = (stage.count / max) * 100;
 
               return (
@@ -163,16 +178,11 @@ function OperationsDashboard() {
 
           <div className="mt-6 grid gap-3">
             {state.instructorLeads.map((lead) => (
-              <div
-                key={lead.id}
-                className="rounded-xl border border-border p-4"
-              >
+              <div key={lead.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">{lead.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {lead.expertise}
-                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{lead.expertise}</div>
                   </div>
                   <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-secondary-foreground">
                     {stageLabels[lead.stage]}
@@ -183,8 +193,11 @@ function OperationsDashboard() {
                     <button
                       key={stage}
                       onClick={() => {
-                        moveInstructorLead(lead.id, stage);
-                        toast.success(`${lead.name} moved to ${stageLabels[stage]}`);
+                        void runAdminAction(
+                          () => moveInstructorLead(lead.id, stage),
+                          `${lead.name} moved to ${stageLabels[stage]}`,
+                          "Unable to update lead stage."
+                        );
                       }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                         lead.stage === stage
@@ -207,6 +220,7 @@ function OperationsDashboard() {
             className="mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
+
               if (
                 !reviewForm.title.trim() ||
                 !reviewForm.instructor.trim() ||
@@ -216,9 +230,14 @@ function OperationsDashboard() {
                 return;
               }
 
-              addReviewQueueItem(reviewForm);
-              setReviewForm({ title: "", instructor: "", category: "" });
-              toast.success("Course added to review queue");
+              void runAdminAction(
+                async () => {
+                  await addReviewQueueItem(reviewForm);
+                  setReviewForm({ title: "", instructor: "", category: "" });
+                },
+                "Course added to review queue",
+                "Unable to add course to the review queue."
+              );
             }}
           >
             <Field
@@ -254,7 +273,7 @@ function OperationsDashboard() {
           </form>
         </section>
 
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <h3 className="font-semibold">Content review queue</h3>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full text-sm">
@@ -268,10 +287,7 @@ function OperationsDashboard() {
               </thead>
               <tbody>
                 {orderedReviewQueue.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-border align-top last:border-0"
-                  >
+                  <tr key={item.id} className="border-b border-border align-top last:border-0">
                     <td className="py-3">
                       <div className="font-medium">{item.title}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
@@ -282,24 +298,30 @@ function OperationsDashboard() {
                     <td>{item.submittedAt}</td>
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
-                        {(["pending", "in_review", "approved", "changes_requested"] as const).map(
-                          (status) => (
-                            <button
-                              key={status}
-                              onClick={() => {
-                                updateReviewStatus(item.id, status);
-                                toast.success(`Review moved to ${prettyStatus(status)}`);
-                              }}
-                              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                                item.status === status
-                                  ? "bg-acid text-acid-foreground"
-                                  : "bg-secondary text-secondary-foreground hover:bg-accent"
-                              }`}
-                            >
-                              {prettyStatus(status)}
-                            </button>
-                          )
-                        )}
+                        {([
+                          "pending",
+                          "in_review",
+                          "approved",
+                          "changes_requested",
+                        ] as const).map((status) => (
+                          <button
+                            key={status}
+                            onClick={() => {
+                              void runAdminAction(
+                                () => updateReviewStatus(item.id, status),
+                                `Review moved to ${prettyStatus(status)}`,
+                                "Unable to update review status."
+                              );
+                            }}
+                            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                              item.status === status
+                                ? "bg-acid text-acid-foreground"
+                                : "bg-secondary text-secondary-foreground hover:bg-accent"
+                            }`}
+                          >
+                            {prettyStatus(status)}
+                          </button>
+                        ))}
                       </div>
                     </td>
                   </tr>
@@ -309,20 +331,15 @@ function OperationsDashboard() {
           </div>
         </section>
 
-        <section className="lg:col-span-3 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-3">
           <h3 className="font-semibold">Server health</h3>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {state.servers.map((server) => (
-              <div
-                key={server.id}
-                className="rounded-xl border border-border p-5"
-              >
+              <div key={server.id} className="rounded-xl border border-border p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{server.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Load {server.load}%
-                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">Load {server.load}%</div>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
@@ -355,16 +372,20 @@ function OperationsDashboard() {
                     <button
                       key={status}
                       onClick={() => {
-                        updateServer(server.id, {
-                          status,
-                          load:
-                            status === "Healthy"
-                              ? 42
-                              : status === "Elevated"
-                                ? 76
-                                : 92,
-                        });
-                        toast.success(`${server.name} marked ${status}`);
+                        void runAdminAction(
+                          () =>
+                            updateServer(server.id, {
+                              status,
+                              load:
+                                status === "Healthy"
+                                  ? 42
+                                  : status === "Elevated"
+                                    ? 76
+                                    : 92,
+                            }),
+                          `${server.name} marked ${status}`,
+                          "Unable to update server health."
+                        );
                       }}
                       className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                         server.status === status

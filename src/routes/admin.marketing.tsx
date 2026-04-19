@@ -4,8 +4,8 @@ import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LiveNumber } from "@/components/LiveNumber";
+import { getErrorMessage } from "@/lib/errors";
 import { useAdminWorkspace } from "@/lib/admin";
-import { inr } from "@/lib/data";
 
 export const Route = createFileRoute("/admin/marketing")({
   head: () => ({
@@ -42,6 +42,19 @@ function MarketingDashboard() {
     () => Math.max(...marketingMetrics.funnel.map((item) => item.value), 1),
     [marketingMetrics.funnel]
   );
+
+  const runAdminAction = async (
+    action: () => Promise<void>,
+    successMessage: string,
+    failureMessage: string
+  ) => {
+    try {
+      await action();
+      toast.success(successMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, failureMessage));
+    }
+  };
 
   return (
     <DashboardLayout role="admin" title="Marketing dashboard">
@@ -81,7 +94,7 @@ function MarketingDashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold">Campaign board</h3>
@@ -106,15 +119,12 @@ function MarketingDashboard() {
                   : 0;
 
               return (
-                <div
-                  key={campaign.id}
-                  className="rounded-xl border border-border p-5"
-                >
+                <div key={campaign.id} className="rounded-xl border border-border p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="font-semibold">{campaign.channel}</div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        Spend {inr(campaign.spend)}
+                        Spend {formatCurrency(campaign.spend)}
                       </div>
                     </div>
                     <span
@@ -147,11 +157,12 @@ function MarketingDashboard() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       onClick={() => {
-                        toggleCampaign(campaign.id);
-                        toast.success(
+                        void runAdminAction(
+                          () => toggleCampaign(campaign.id),
                           campaign.status === "active"
                             ? "Campaign paused"
-                            : "Campaign reactivated"
+                            : "Campaign reactivated",
+                          "Unable to update campaign status."
                         );
                       }}
                       className="rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground transition hover:bg-accent"
@@ -160,8 +171,11 @@ function MarketingDashboard() {
                     </button>
                     <button
                       onClick={() => {
-                        bumpCampaignConversions(campaign.id);
-                        toast.success("Recorded one more conversion");
+                        void runAdminAction(
+                          () => bumpCampaignConversions(campaign.id),
+                          "Recorded one more conversion",
+                          "Unable to update campaign conversions."
+                        );
                       }}
                       className="rounded-md bg-acid px-3 py-1.5 text-xs font-semibold text-acid-foreground transition hover:opacity-90"
                     >
@@ -184,29 +198,35 @@ function MarketingDashboard() {
             className="mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
+
               if (!form.channel.trim()) {
                 toast.error("Channel name is required.");
                 return;
               }
 
-              createCampaign({
-                channel: form.channel,
-                spend: Number(form.spend) || 0,
-                impressions: Number(form.impressions) || 0,
-                clicks: Number(form.clicks) || 0,
-                signups: Number(form.signups) || 0,
-                conversions: Number(form.conversions) || 0,
-              });
+              void runAdminAction(
+                async () => {
+                  await createCampaign({
+                    channel: form.channel,
+                    spend: Number(form.spend) || 0,
+                    impressions: Number(form.impressions) || 0,
+                    clicks: Number(form.clicks) || 0,
+                    signups: Number(form.signups) || 0,
+                    conversions: Number(form.conversions) || 0,
+                  });
 
-              setForm({
-                channel: "",
-                spend: "",
-                impressions: "",
-                clicks: "",
-                signups: "",
-                conversions: "",
-              });
-              toast.success("Campaign added to the board");
+                  setForm({
+                    channel: "",
+                    spend: "",
+                    impressions: "",
+                    clicks: "",
+                    signups: "",
+                    conversions: "",
+                  });
+                },
+                "Campaign added to the board",
+                "Unable to create campaign."
+              );
             }}
           >
             <Field
@@ -281,8 +301,7 @@ function MarketingDashboard() {
               const percentage = (item.value / maxFunnelValue) * 100;
               const previous =
                 index === 0 ? item.value : marketingMetrics.funnel[index - 1].value;
-              const stageConversion =
-                previous > 0 ? (item.value / previous) * 100 : 0;
+              const stageConversion = previous > 0 ? (item.value / previous) * 100 : 0;
 
               return (
                 <div key={item.stage}>
@@ -306,7 +325,7 @@ function MarketingDashboard() {
           </div>
         </section>
 
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <h3 className="font-semibold">Performance snapshot</h3>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <Snapshot
@@ -326,6 +345,10 @@ function MarketingDashboard() {
       </div>
     </DashboardLayout>
   );
+}
+
+function formatCurrency(value: number) {
+  return `Rs ${Math.round(value).toLocaleString("en-IN")}`;
 }
 
 function StatCard({

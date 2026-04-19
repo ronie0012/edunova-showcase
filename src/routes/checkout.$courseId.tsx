@@ -91,8 +91,8 @@ function CheckoutPage() {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      const added = enroll(course.id);
+    setTimeout(async () => {
+      const added = await enroll(course.id);
       setLoading(false);
       setDone(true);
       toast.success(added ? "Payment successful · Course unlocked" : "Already enrolled · Redirecting");

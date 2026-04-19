@@ -1,5 +1,18 @@
-import { Link, useLocation, useNavigate, Navigate } from "@tanstack/react-router";
-import { LayoutDashboard, BookOpen, BarChart3, Shield, Megaphone, Wallet, Settings, Bell, Search, Menu, LogOut, AlertTriangle } from "lucide-react";
+import { Link, Navigate, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  AlertTriangle,
+  BarChart3,
+  Bell,
+  BookOpen,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  Menu,
+  Search,
+  Settings,
+  Shield,
+  Wallet,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -36,29 +49,36 @@ export function DashboardLayout({
   const items = navs[role];
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const nav = useNavigate();
+  const { user, ready, logout } = useAuth();
+  const navigate = useNavigate();
 
-  // ── Auth guard: must be logged in ──────────────────────────────────────────
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-sm text-muted-foreground">Loading workspace...</div>
+      </div>
+    );
+  }
+
   if (!user) {
     return <Navigate to="/login" search={{ redirect: location.pathname }} />;
   }
 
-  // ── Admin guard: only admins can access admin workspace ───────────────────
   if (role === "admin" && !user.isAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="max-w-md text-center">
-          <div className="mx-auto mb-6 h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
             <AlertTriangle className="h-8 w-8 text-destructive" />
           </div>
           <h1 className="font-display text-3xl tracking-tight">Access Denied</h1>
           <p className="mt-3 text-muted-foreground">
-            The admin workspace is restricted to EduNova administrators. Your account ({user.email}) does not have admin privileges.
+            The admin workspace is restricted to EduNova administrators. Your
+            account ({user.email}) does not have admin privileges.
           </p>
           <Link
             to="/student"
-            className="mt-6 inline-flex items-center gap-2 rounded-md bg-acid text-acid-foreground px-5 py-2.5 text-sm font-semibold hover:opacity-90 transition"
+            className="mt-6 inline-flex items-center gap-2 rounded-md bg-acid px-5 py-2.5 text-sm font-semibold text-acid-foreground transition hover:opacity-90"
           >
             Go to my dashboard
           </Link>
@@ -69,54 +89,60 @@ export function DashboardLayout({
 
   const initials = user.name
     .split(" ")
-    .map((s) => s[0])
+    .map((segment) => segment[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.success("Signed out");
-    nav({ to: "/" });
+    navigate({ to: "/" });
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-background">
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-30 w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform ${
+        className={`fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-sidebar-border bg-sidebar transition-transform md:static ${
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
       >
-        <Link to="/" className="flex items-center gap-2.5 h-16 px-5 border-b border-sidebar-border">
-          <div className="relative h-8 w-8 rounded-md bg-foreground text-background flex items-center justify-center font-display text-lg leading-none">
-            E<span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" />
+        <Link
+          to="/"
+          className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5"
+        >
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-md bg-foreground font-display text-lg leading-none text-background">
+            E
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-acid" />
           </div>
           <div className="font-display text-xl tracking-tight">
             EduNova<span className="text-acid">.</span>
           </div>
         </Link>
 
-        <div className="px-3 py-4 flex-1 overflow-y-auto">
-          <div className="px-2 mb-3 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="mb-3 px-2 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
             {role} workspace
           </div>
           <nav className="space-y-1">
             {items.map((item) => {
               const active = location.pathname === item.to;
               const Icon = item.icon;
+
               return (
                 <Link
                   key={item.to}
                   to={item.to}
                   onClick={() => setOpen(false)}
-                  className={`group flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors relative ${
+                  className={`group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                     active
                       ? "bg-accent text-foreground"
                       : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                   }`}
                 >
-                  {active && <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-acid rounded-r" />}
+                  {active ? (
+                    <span className="absolute bottom-1.5 left-0 top-1.5 w-0.5 rounded-r bg-acid" />
+                  ) : null}
                   <Icon className="h-4 w-4" />
                   {item.label}
                 </Link>
@@ -129,26 +155,26 @@ export function DashboardLayout({
           </div>
           <div className="mt-2 space-y-1">
             {(["student", "instructor", "admin"] as const)
-              .filter((r) => r !== role)
-              .filter((r) => r !== "admin" || user.isAdmin)
-              .map((r) => (
+              .filter((item) => item !== role)
+              .filter((item) => item !== "admin" || user.isAdmin)
+              .map((item) => (
                 <Link
-                  key={r}
-                  to={`/${r}`}
-                  className="block rounded-md px-3 py-2 text-sm capitalize text-muted-foreground hover:bg-accent hover:text-foreground transition"
+                  key={item}
+                  to={`/${item}`}
+                  className="block rounded-md px-3 py-2 text-sm capitalize text-muted-foreground transition hover:bg-accent hover:text-foreground"
                 >
-                  {r} →
+                  {item} →
                 </Link>
               ))}
           </div>
         </div>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="border-t border-sidebar-border p-3">
           <div className="rounded-md bg-accent/50 p-3 text-xs">
             <div className="font-mono text-[10px] uppercase tracking-wider text-acid">
               {user.isAdmin ? "Admin account" : "Pro tip"}
             </div>
-            <div className="mt-1 text-muted-foreground leading-relaxed">
+            <div className="mt-1 leading-relaxed text-muted-foreground">
               {user.isAdmin
                 ? `Logged in as ${user.email}`
                 : "All metrics update live every few seconds."}
@@ -157,34 +183,34 @@ export function DashboardLayout({
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-20 h-16 bg-background/80 backdrop-blur border-b border-border flex items-center px-4 sm:px-6 gap-3">
-          <button className="md:hidden p-2" onClick={() => setOpen(!open)}>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
+          <button className="p-2 md:hidden" onClick={() => setOpen(!open)}>
             <Menu className="h-5 w-5" />
           </button>
           <h1 className="font-display text-2xl tracking-tight">{title}</h1>
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground border border-border">
+            <div className="hidden items-center gap-2 rounded-md border border-border bg-muted px-3 py-1.5 text-sm text-muted-foreground sm:flex">
               <Search className="h-4 w-4" />
               <span className="font-mono text-xs">⌘K · search</span>
             </div>
-            <button className="relative p-2 rounded-md hover:bg-accent">
+            <button className="relative rounded-md p-2 hover:bg-accent">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-acid" />
+              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-acid" />
             </button>
-            <div className="hidden sm:flex flex-col items-end leading-tight">
+            <div className="hidden flex-col items-end leading-tight sm:flex">
               <div className="text-xs font-medium">{user.name}</div>
               <div className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
                 {user.email}
               </div>
             </div>
-            <div className="h-9 w-9 rounded-md bg-acid text-acid-foreground flex items-center justify-center text-sm font-display">
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-acid text-sm font-display text-acid-foreground">
               {initials}
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               title="Sign out"
-              className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-destructive transition"
+              className="rounded-md p-2 text-muted-foreground transition hover:bg-accent hover:text-destructive"
             >
               <LogOut className="h-4 w-4" />
             </button>

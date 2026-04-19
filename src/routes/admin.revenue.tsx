@@ -17,7 +17,6 @@ import { type ReactNode } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LiveNumber } from "@/components/LiveNumber";
 import { useAdminWorkspace } from "@/lib/admin";
-import { inr } from "@/lib/data";
 
 export const Route = createFileRoute("/admin/revenue")({
   head: () => ({
@@ -116,7 +115,7 @@ function RevenueDashboard() {
                     }
                   />
                   <Tooltip
-                    formatter={(value) => inr(Number(value))}
+                    formatter={(value) => formatCurrency(Number(value))}
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
@@ -164,7 +163,7 @@ function RevenueDashboard() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => inr(Number(value))}
+                    formatter={(value) => formatCurrency(Number(value))}
                     contentStyle={{
                       background: "var(--color-card)",
                       border: "1px solid var(--color-border)",
@@ -208,9 +207,7 @@ function RevenueDashboard() {
                     >
                       <td className="py-3 font-medium">{course.title}</td>
                       <td className="text-right">{course.sales}</td>
-                      <td className="text-right font-semibold">
-                        {inr(course.revenue)}
-                      </td>
+                      <td className="text-right font-semibold">{formatCurrency(course.revenue)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -238,7 +235,7 @@ function RevenueDashboard() {
                     <span className="text-muted-foreground">
                       {new Date(order.enrolledAt).toLocaleString("en-IN")}
                     </span>
-                    <span className="font-semibold">{inr(order.price)}</span>
+                    <span className="font-semibold">{formatCurrency(order.price)}</span>
                   </div>
                 </div>
               ))
@@ -250,6 +247,10 @@ function RevenueDashboard() {
       </div>
     </DashboardLayout>
   );
+}
+
+function formatCurrency(value: number) {
+  return `Rs ${Math.round(value).toLocaleString("en-IN")}`;
 }
 
 function RevenueCard({

@@ -10,6 +10,9 @@ export function LiveNumber({ value, prefix = "", suffix = "", drift = 0.002, for
 }) {
   const [n, setN] = useState(value);
   useEffect(() => {
+    setN(value);
+  }, [value]);
+  useEffect(() => {
     const id = setInterval(() => {
       const delta = (Math.random() - 0.45) * value * drift;
       setN((prev) => Math.max(0, prev + delta));

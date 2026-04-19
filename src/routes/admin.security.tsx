@@ -3,6 +3,7 @@ import { AlertTriangle, FileText, Shield } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { getErrorMessage } from "@/lib/errors";
 import { useAdminWorkspace } from "@/lib/admin";
 
 export const Route = createFileRoute("/admin/security")({
@@ -24,6 +25,19 @@ function SecurityDashboard() {
     useAdminWorkspace();
   const [modal, setModal] = useState<null | "privacy" | "terms">(null);
 
+  const runAdminAction = async (
+    action: () => Promise<void>,
+    successMessage: string,
+    failureMessage: string
+  ) => {
+    try {
+      await action();
+      toast.success(successMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, failureMessage));
+    }
+  };
+
   return (
     <DashboardLayout role="admin" title="Security dashboard">
       <div className="rounded-2xl border border-warning/40 bg-warning/10 p-5">
@@ -41,7 +55,7 @@ function SecurityDashboard() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="font-semibold">Login activity</h3>
@@ -68,11 +82,8 @@ function SecurityDashboard() {
               </thead>
               <tbody>
                 {state.securityEvents.map((event) => (
-                  <tr
-                    key={event.id}
-                    className="border-b border-border last:border-0"
-                  >
-                    <td className="py-3 whitespace-nowrap">{event.time}</td>
+                  <tr key={event.id} className="border-b border-border last:border-0">
+                    <td className="whitespace-nowrap py-3">{event.time}</td>
                     <td>{event.device}</td>
                     <td className="font-mono text-xs">{event.ip}</td>
                     <td>{event.location}</td>
@@ -80,11 +91,10 @@ function SecurityDashboard() {
                     <td className="text-right">
                       <button
                         onClick={() => {
-                          toggleSecurityEventStatus(event.id);
-                          toast.success(
-                            event.status === "ok"
-                              ? "Event blocked"
-                              : "Event marked safe"
+                          void runAdminAction(
+                            () => toggleSecurityEventStatus(event.id),
+                            event.status === "ok" ? "Event blocked" : "Event marked safe",
+                            "Unable to update login activity."
                           );
                         }}
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -93,7 +103,7 @@ function SecurityDashboard() {
                             : "bg-destructive/15 text-destructive"
                         }`}
                       >
-                        {event.status === "ok" ? "Allow" : "Blocked"}
+                        {event.status === "ok" ? "Safe" : "Blocked"}
                       </button>
                     </td>
                   </tr>
@@ -119,13 +129,13 @@ function SecurityDashboard() {
               <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Storage
               </div>
-              <div>Client-side demo storage with local-only admin persistence.</div>
+              <div>File-backed demo storage with server actions and secure cookie sessions.</div>
             </div>
             <div>
               <div className="text-xs font-semibold uppercase text-muted-foreground">
                 Retention
               </div>
-              <div>Admins can clear local state, while public policy pages explain the product contract.</div>
+              <div>Admins can inspect or reset demo data, while public policy pages explain the product contract.</div>
             </div>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-2">
@@ -152,7 +162,7 @@ function SecurityDashboard() {
           </Link>
         </section>
 
-        <section className="lg:col-span-3 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-3">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="font-semibold">Security controls</h3>
@@ -167,17 +177,15 @@ function SecurityDashboard() {
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {state.securityControls.map((control) => (
-              <div
-                key={control.id}
-                className="rounded-xl border border-border p-5"
-              >
+              <div key={control.id} className="rounded-xl border border-border p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="font-medium">{control.name}</div>
                   <button
                     onClick={() => {
-                      toggleSecurityControl(control.id);
-                      toast.success(
-                        control.active ? "Control disabled" : "Control enabled"
+                      void runAdminAction(
+                        () => toggleSecurityControl(control.id),
+                        control.active ? "Control disabled" : "Control enabled",
+                        "Unable to update security control."
                       );
                     }}
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${
@@ -209,8 +217,8 @@ function SecurityDashboard() {
               {modal === "privacy" ? "Privacy Policy" : "Terms of Service"} summary
             </h3>
             <p className="mt-4 text-sm text-muted-foreground">
-              This admin workspace is currently a client-side demo. Public policy
-              pages remain the canonical user-facing source of truth.
+              This admin workspace is currently a file-backed demo with server actions.
+              Public policy pages remain the canonical user-facing source of truth.
             </p>
             <Link
               to={modal === "privacy" ? "/privacy" : "/terms"}

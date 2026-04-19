@@ -18,10 +18,8 @@ import {
 import { toast } from "sonner";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { LiveNumber } from "@/components/LiveNumber";
-import {
-  type TicketPriority,
-  useAdminWorkspace,
-} from "@/lib/admin";
+import { type TicketPriority, useAdminWorkspace } from "@/lib/admin";
+import { getErrorMessage } from "@/lib/errors";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -72,13 +70,26 @@ function AdminControlCenter() {
     action: "",
     outcome: "",
   });
-
-  const recentUsers = useMemo(
-    () => [...users].slice(-5).reverse(),
-    [users]
+  const [churnDrafts, setChurnDrafts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(defaultChurnDrafts(state.churnRisks))
   );
 
+  const recentUsers = useMemo(() => [...users].slice(-5).reverse(), [users]);
   const ticketTotal = ticketMetrics.total || 1;
+  const activeChurnDrafts = Object.fromEntries(defaultChurnDrafts(state.churnRisks, churnDrafts));
+
+  const runAdminAction = async (
+    action: () => Promise<void>,
+    successMessage: string,
+    failureMessage: string
+  ) => {
+    try {
+      await action();
+      toast.success(successMessage);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, failureMessage));
+    }
+  };
 
   return (
     <DashboardLayout role="admin" title="Admin control center">
@@ -106,11 +117,9 @@ function AdminControlCenter() {
           },
         ].map((stat) => {
           const Icon = stat.icon;
+
           return (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-border bg-card p-5"
-            >
+            <div key={stat.label} className="rounded-2xl border border-border bg-card p-5">
               <div className="flex items-center justify-between">
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
                 <Icon className="h-4 w-4 text-primary" />
@@ -191,7 +200,7 @@ function AdminControlCenter() {
           </div>
         </section>
 
-        <section className="lg:col-span-2 rounded-2xl border border-border bg-card p-6">
+        <section className="rounded-2xl border border-border bg-card p-6 lg:col-span-2">
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="font-semibold">Support inbox</h3>
@@ -209,10 +218,7 @@ function AdminControlCenter() {
               <EmptyCard text="Create the first support ticket to start the workflow." />
             ) : (
               state.tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className="rounded-xl border border-border p-4"
-                >
+                <div key={ticket.id} className="rounded-xl border border-border p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="font-medium">{ticket.subject}</div>
@@ -230,8 +236,11 @@ function AdminControlCenter() {
                       <button
                         key={status}
                         onClick={() => {
-                          updateTicketStatus(ticket.id, status);
-                          toast.success(`Ticket moved to ${status}`);
+                          void runAdminAction(
+                            () => updateTicketStatus(ticket.id, status),
+                            `Ticket moved to ${status}`,
+                            "Unable to update ticket status."
+                          );
                         }}
                         className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                           ticket.status === status
@@ -252,13 +261,14 @@ function AdminControlCenter() {
         <section className="rounded-2xl border border-border bg-card p-6">
           <h3 className="font-semibold">Create support ticket</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            This persists locally, just like auth and enrollments.
+            This persists in the shared demo workspace, just like auth and enrollments.
           </p>
 
           <form
             className="mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
+
               if (
                 !ticketForm.customerName.trim() ||
                 !ticketForm.email.trim() ||
@@ -268,15 +278,20 @@ function AdminControlCenter() {
                 return;
               }
 
-              createTicket(ticketForm);
-              setTicketForm({
-                customerName: "",
-                email: "",
-                category: "Payment Issues",
-                subject: "",
-                priority: "medium",
-              });
-              toast.success("Support ticket created");
+              void runAdminAction(
+                async () => {
+                  await createTicket(ticketForm);
+                  setTicketForm({
+                    customerName: "",
+                    email: "",
+                    category: "Payment Issues",
+                    subject: "",
+                    priority: "medium",
+                  });
+                },
+                "Support ticket created",
+                "Unable to create support ticket."
+              );
             }}
           >
             <Field
@@ -337,13 +352,11 @@ function AdminControlCenter() {
                 }
                 className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm"
               >
-                {(["low", "medium", "high", "critical"] as const).map(
-                  (priority) => (
-                    <option key={priority} value={priority}>
-                      {priority}
-                    </option>
-                  )
-                )}
+                {(["low", "medium", "high", "critical"] as const).map((priority) => (
+                  <option key={priority} value={priority}>
+                    {priority}
+                  </option>
+                ))}
               </select>
             </label>
             <Field
@@ -370,10 +383,7 @@ function AdminControlCenter() {
           </h3>
           <div className="mt-4 space-y-3">
             {orderedIncidents.map((incident) => (
-              <div
-                key={incident.id}
-                className="rounded-xl border border-border p-4"
-              >
+              <div key={incident.id} className="rounded-xl border border-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium">{incident.title}</div>
@@ -390,24 +400,25 @@ function AdminControlCenter() {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {(["in_progress", "monitoring", "resolved"] as const).map(
-                    (status) => (
-                      <button
-                        key={status}
-                        onClick={() => {
-                          updateIncidentStatus(incident.id, status);
-                          toast.success(`Incident moved to ${status}`);
-                        }}
-                        className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                          incident.status === status
-                            ? "bg-acid text-acid-foreground"
-                            : "bg-secondary text-secondary-foreground hover:bg-accent"
-                        }`}
-                      >
-                        {status.replace("_", " ")}
-                      </button>
-                    )
-                  )}
+                  {(["in_progress", "monitoring", "resolved"] as const).map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        void runAdminAction(
+                          () => updateIncidentStatus(incident.id, status),
+                          `Incident moved to ${status}`,
+                          "Unable to update incident status."
+                        );
+                      }}
+                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                        incident.status === status
+                          ? "bg-acid text-acid-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-accent"
+                      }`}
+                    >
+                      {status.replace("_", " ")}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
@@ -424,6 +435,7 @@ function AdminControlCenter() {
             className="mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
+
               if (
                 !feedbackForm.trigger.trim() ||
                 !feedbackForm.action.trim() ||
@@ -433,9 +445,14 @@ function AdminControlCenter() {
                 return;
               }
 
-              addFeedbackAction(feedbackForm);
-              setFeedbackForm({ trigger: "", action: "", outcome: "" });
-              toast.success("Feedback action logged");
+              void runAdminAction(
+                async () => {
+                  await addFeedbackAction(feedbackForm);
+                  setFeedbackForm({ trigger: "", action: "", outcome: "" });
+                },
+                "Feedback action logged",
+                "Unable to log feedback action."
+              );
             }}
           >
             <Field
@@ -472,10 +489,7 @@ function AdminControlCenter() {
 
           <div className="mt-5 space-y-3">
             {state.feedbackActions.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-xl bg-muted/30 p-4 text-sm"
-              >
+              <div key={entry.id} className="rounded-xl bg-muted/30 p-4 text-sm">
                 <div className="text-xs font-semibold uppercase tracking-wide text-destructive">
                   Trigger
                 </div>
@@ -511,12 +525,28 @@ function AdminControlCenter() {
                   <Pill tone="warning">{risk.reason}</Pill>
                 </div>
                 <input
-                  value={risk.action}
+                  value={activeChurnDrafts[risk.id]}
                   onChange={(event) =>
-                    updateChurnAction(risk.id, event.target.value)
+                    setChurnDrafts((current) => ({
+                      ...current,
+                      [risk.id]: event.target.value,
+                    }))
                   }
                   className="mt-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void runAdminAction(
+                      () => updateChurnAction(risk.id, activeChurnDrafts[risk.id]),
+                      `${risk.name}'s retention action updated`,
+                      "Unable to save the churn action."
+                    );
+                  }}
+                  className="mt-3 rounded-md bg-secondary px-3 py-1.5 text-xs font-semibold text-secondary-foreground transition hover:bg-accent"
+                >
+                  Save action
+                </button>
               </div>
             ))}
           </div>
@@ -535,9 +565,7 @@ function AdminControlCenter() {
                 >
                   <div>
                     <div className="font-medium">{user.name}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {user.email}
-                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{user.email}</div>
                   </div>
                   <Pill tone={user.isAdmin ? "resolved" : "open"}>
                     {user.isAdmin ? "admin" : "learner"}
@@ -550,6 +578,13 @@ function AdminControlCenter() {
       </div>
     </DashboardLayout>
   );
+}
+
+function defaultChurnDrafts(
+  risks: Array<{ id: string; action: string }>,
+  drafts: Record<string, string> = {}
+) {
+  return risks.map((risk) => [risk.id, drafts[risk.id] ?? risk.action] as const);
 }
 
 function MetricPill({ label, value }: { label: string; value: string }) {

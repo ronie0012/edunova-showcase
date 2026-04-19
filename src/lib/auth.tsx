@@ -1,133 +1,170 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-export type User = {
-  email: string;
-  name: string;
-  isAdmin: boolean;
-};
-
-type StoredUser = {
-  name: string;
-  /** Simple base64 "hash" — good enough for a localStorage-only demo */
-  passwordHash: string;
-  isAdmin: boolean;
-};
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import type { AdminState, Enrollment, User } from "@/lib/models";
+import {
+  getCurrentUser,
+  loginUser,
+  logoutUser,
+  migrateLegacyState,
+  signupUser,
+} from "@/lib/server-fns";
 
 type AuthCtx = {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  ready: boolean;
+  login: (email: string, password: string) => Promise<User>;
+  signup: (email: string, password: string, name: string) => Promise<User>;
+  logout: () => Promise<void>;
+  refresh: () => Promise<User | null>;
 };
 
-// ─── Storage keys ─────────────────────────────────────────────────────────────
-const SESSION_KEY = "edunova:session";
+const Ctx = createContext<AuthCtx | null>(null);
+
+const MIGRATION_KEY = "edunova:backend-migrated";
 const USERS_KEY = "edunova:users";
+const SESSION_KEY = "edunova:session";
+const ADMIN_KEY = "edunova:admin-state";
+const ENROLLMENT_PREFIX = "edunova:enrollments:";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-/** Deterministic role: any @edunova.io email is admin */
-const checkAdmin = (email: string) =>
-  email.toLowerCase().endsWith("@edunova.io");
+function safeParse<T>(value: string | null): T | undefined {
+  if (!value) return undefined;
 
-/** Very simple hash — fine for localStorage-only storage */
-const hashPassword = (pwd: string) => btoa(encodeURIComponent(pwd));
-
-function readUsers(): Record<string, StoredUser> {
-  if (typeof window === "undefined") return {};
   try {
-    const raw = localStorage.getItem(USERS_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, StoredUser>) : {};
+    return JSON.parse(value) as T;
   } catch {
-    return {};
+    return undefined;
   }
 }
 
-function writeUsers(users: Record<string, StoredUser>) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  window.dispatchEvent(new CustomEvent("edunova:auth-users-changed"));
-}
-
-function readSession(): User | null {
+function readLegacyState() {
   if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as User) : null;
-  } catch {
+
+  const users = safeParse<
+    Record<string, { name: string; passwordHash: string; isAdmin: boolean }>
+  >(localStorage.getItem(USERS_KEY));
+  const session = safeParse<User>(localStorage.getItem(SESSION_KEY));
+  const adminState = safeParse<AdminState>(localStorage.getItem(ADMIN_KEY));
+
+  const enrollments: Record<string, Enrollment[]> = {};
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (!key || !key.startsWith(ENROLLMENT_PREFIX)) continue;
+
+    const email = key.slice(ENROLLMENT_PREFIX.length);
+    const value = safeParse<Enrollment[]>(localStorage.getItem(key));
+    if (value) {
+      enrollments[email] = value;
+    }
+  }
+
+  const hasUsers = users && Object.keys(users).length > 0;
+  const hasEnrollments = Object.keys(enrollments).length > 0;
+
+  if (!hasUsers && !session && !adminState && !hasEnrollments) {
     return null;
   }
+
+  return {
+    users,
+    session,
+    adminState,
+    enrollments,
+  };
 }
 
-function writeSession(u: User | null) {
+function dispatchAuthChanged() {
   if (typeof window === "undefined") return;
-  if (u) localStorage.setItem(SESSION_KEY, JSON.stringify(u));
-  else localStorage.removeItem(SESSION_KEY);
-  window.dispatchEvent(new CustomEvent("edunova:auth-session-changed"));
+  window.dispatchEvent(new CustomEvent("edunova:auth-changed"));
 }
-
-// ─── Context / Provider ───────────────────────────────────────────────────────
-const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
 
-  // Restore session on mount
-  useEffect(() => {
-    const session = readSession();
-    if (session) setUser(session);
-  }, []);
+  const getCurrentUserFn = useServerFn(getCurrentUser);
+  const migrateLegacyStateFn = useServerFn(migrateLegacyState);
+  const loginUserFn = useServerFn(loginUser);
+  const signupUserFn = useServerFn(signupUser);
+  const logoutUserFn = useServerFn(logoutUser);
 
-  const persist = (u: User | null) => {
-    setUser(u);
-    writeSession(u);
+  const refresh = async () => {
+    const nextUser = await getCurrentUserFn();
+    setUser(nextUser);
+    return nextUser;
   };
 
+  useEffect(() => {
+    let active = true;
+
+    const boot = async () => {
+      try {
+        if (
+          typeof window !== "undefined" &&
+          localStorage.getItem(MIGRATION_KEY) !== "done"
+        ) {
+          const legacyState = readLegacyState();
+          if (legacyState) {
+            await migrateLegacyStateFn({ data: legacyState });
+          }
+          localStorage.setItem(MIGRATION_KEY, "done");
+        }
+
+        const nextUser = await getCurrentUserFn();
+        if (active) {
+          setUser(nextUser);
+        }
+      } finally {
+        if (active) {
+          setReady(true);
+        }
+      }
+    };
+
+    void boot();
+
+    return () => {
+      active = false;
+    };
+  }, [getCurrentUserFn, migrateLegacyStateFn]);
+
   const login = async (email: string, password: string) => {
-    const e = email.trim().toLowerCase();
-    if (!e || !password) throw new Error("Email and password are required");
-
-    const users = readUsers();
-    const stored = users[e];
-
-    if (!stored) {
-      throw new Error("No account found with that email. Please sign up.");
-    }
-    if (stored.passwordHash !== hashPassword(password)) {
-      throw new Error("Incorrect password. Please try again.");
-    }
-
-    persist({ email: e, name: stored.name, isAdmin: stored.isAdmin });
+    const nextUser = await loginUserFn({
+      data: { email, password },
+    });
+    setUser(nextUser);
+    dispatchAuthChanged();
+    return nextUser;
   };
 
   const signup = async (email: string, password: string, name: string) => {
-    const e = email.trim().toLowerCase();
-    const n = name.trim();
-    if (!e || !password || !n) throw new Error("All fields are required");
-    if (password.length < 6) throw new Error("Password must be at least 6 characters");
-
-    const users = readUsers();
-    if (users[e]) {
-      throw new Error("An account with this email already exists. Please sign in.");
-    }
-
-    const isAdmin = checkAdmin(e);
-    const newUser: StoredUser = {
-      name: n,
-      passwordHash: hashPassword(password),
-      isAdmin,
-    };
-    writeUsers({ ...users, [e]: newUser });
-    persist({ email: e, name: n, isAdmin });
+    const nextUser = await signupUserFn({
+      data: { email, password, name },
+    });
+    setUser(nextUser);
+    dispatchAuthChanged();
+    return nextUser;
   };
 
-  const logout = () => persist(null);
+  const logout = async () => {
+    await logoutUserFn();
+    setUser(null);
+    dispatchAuthChanged();
+  };
 
-  return <Ctx.Provider value={{ user, login, signup, logout }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={{ user, ready, login, signup, logout, refresh }}>
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useAuth() {
-  const c = useContext(Ctx);
-  if (!c) throw new Error("useAuth must be used inside AuthProvider");
-  return c;
+  const context = useContext(Ctx);
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+  return context;
 }
+
+export type { User } from "@/lib/models";
